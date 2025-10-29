@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import random as r
 import pygame
 
-# dans ce fichier python ai défini tout ce qui est en rapport au pièce dans le jeu
+# dans ce fichier python ai défini toute les classes des pièces dans le jeu
 # les nom des classes, variables etc.. seront en anglais (pour une compréhension globale sur github)
 # les docstrings en revanche seront en français pour faciliter la compréhension des codes 
 
@@ -10,28 +10,29 @@ class Room(ABC):
     """
     Classe de base abstraite pour toutes les pièces du manoir.
     """
-    def __init__(self, name, rarity, gem_cost, color, placement_condition=None, image_path=None ):
+    def __init__(self, name, rarity, gem_cost, color, image_path=None ):
         self.name = name # Nom, ex: "Entrance Hall"
         self.rarity = rarity # Entier de 0 à 3 
         self.gem_cost = gem_cost # Coût en gemmes 
         self.color = color # "blue", "green", etc. 
-        
-        # Condition de placement ( "Edge" , "Middle", "None", "NotRight", "NotLeft", "Initial")
-        self.placement_condition = placement_condition 
-        
         # Portes "modèles" (indique ou il y a une porte)
         self.door_location = {'north': False, 'south': False, 'east': False, 'west': False}
-        
-        # Objets qui seront dans la pièce
-        self.objects_in_room = []
+        self.objects_in_room = [] # Objets qui seront dans la pièce
         
         # Statut des portes (-1 pas de porte, 0 pour ouverte, 1 une clé ou kit crochetage,2 que une clé)
-        # sera utilisé par Dimitri pour dire si les portes sont vérouillé où non
+        # sera utilisé par Dimitri pour dire si les portes sont vérouillé où non (logique de clés)
         # ex: {'north': 0, 'south': 1, 'east': -1 (pas de porte), 'west': 2}
         self.doors_statut = {} 
 
         #  nous dit si le joueur est déjà entré DANS CETTE instance
+        # logique d'effet d'entrée 
         self.First_time = True
+
+        # 0 = 0° (Original), 1 = 90° anti-horaire, 2 = 180°, 3 = 270° anti-horaire
+        self.rotation = 0 
+        
+        # Stockera les rotations valides (ex: [0, 2]) lors du tirage
+        self.valid_rotations = []
 
         self.image = None
         # Je laisse ce if le temps de bien configurer tout les salles pour éviter les erreurs
@@ -48,9 +49,51 @@ class Room(ABC):
     def set_doors(self):
         """Méthode abstraite pour définir les portes de la pièce modèle."""
         pass
+
+    def get_rotated_doors(self):
+        """
+        Retourne le dictionnaire des portes (le "plan") en tenant 
+        compte de la rotation actuelle de la pièce.
+        """
+        doors = self.door_location # Le 'plan' original
+        
+        # Rotation 0: 0° (Identique)
+        if self.rotation == 0:
+            return doors
+        
+        # Rotation 1: 90° anti-horaire
+        elif self.rotation == 1: 
+            return {
+                'north': doors['east'], 
+                'south': doors['west'], 
+                'east': doors['south'], 
+                'west': doors['north']
+            }
+        
+        # Rotation 2: 180°
+        elif self.rotation == 2: 
+            return {
+                'north': doors['south'], 
+                'south': doors['north'], 
+                'east': doors['west'], 
+                'west': doors['east']
+            }
+        
+        # Rotation 3: 270° anti-horaire
+        elif self.rotation == 3: 
+            return {
+                'north': doors['west'], 
+                'south': doors['east'], 
+                'east': doors['north'], 
+                'west': doors['south']
+            }
+        
+        return doors # Sécurité
+    
     # Le player servira à verifier l'inventaire du joueur pour dans certain cas
     # ajouter des effets en fonction de l'objet
     # Sert à ajouter des objets dans la salle
+
     def add_objects(self, player):
         """
         Ajoute des objets aléatoires à la pièce lors de sa création.
@@ -87,7 +130,7 @@ class Room(ABC):
 class Midas_vault(Room):
     def __init__(self):
         # Appelle le constructeur de la classe mère (Room)
-        super().__init__(name="Vault", rarity=2, gem_cost=3, color="blue", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Midas_Vault_Icon.webp")
+        super().__init__(name="Vault", rarity=2, gem_cost=3, color="blue", image_path="NouvelleSalleThèmeHorreur/Midas_Vault_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -101,7 +144,7 @@ class Midas_vault(Room):
 
 class Gallery(Room):
     def __init__(self):
-        super().__init__(name="Gallery", rarity=0, gem_cost=0, color="blue", placement_condition="None", image_path="NouvelleSalleThèmeHorreur/Gallery_Icon.webp")
+        super().__init__(name="Gallery", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Gallery_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -110,7 +153,7 @@ class Gallery(Room):
     
 class Dracula_tomb(Room):
     def __init__(self):
-        super().__init__(name="Dracula's Tomb", rarity=1, gem_cost=0, color="blue", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Dracula_Tomb_Icon.webp")
+        super().__init__(name="Dracula's Tomb", rarity=1, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Dracula_Tomb_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -122,7 +165,7 @@ class Dracula_tomb(Room):
 
 class Garage(Room):
     def __init__(self):
-        super().__init__(name="Garage", rarity=1, gem_cost=1, color="blue", placement_condition="NotRight",image_path="NouvelleSalleThèmeHorreur/Garage_Icon.webp")
+        super().__init__(name="Garage", rarity=1, gem_cost=1, color="blue", image_path="NouvelleSalleThèmeHorreur/Garage_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -134,7 +177,7 @@ class Garage(Room):
 
 class Horror_Hall(Room):
     def __init__(self):
-        super().__init__(name="Horror Hall", rarity=0, gem_cost=0, color="blue", placement_condition="Initial",image_path="NouvelleSalleThèmeHorreur/Horror_Hall_Icon.webp")
+        super().__init__(name="Horror Hall", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Horror_Hall_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -143,7 +186,7 @@ class Horror_Hall(Room):
 
 class Joker_Office(Room):
     def __init__(self):
-        super().__init__(name="Joker's Office", rarity=1, gem_cost=0, color="Red", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Joker_Office_Icon.webp")
+        super().__init__(name="Joker's Office", rarity=1, gem_cost=0, color="Red", image_path="NouvelleSalleThèmeHorreur/Joker_Office_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -160,7 +203,7 @@ class Joker_Office(Room):
 
 class Locksmith(Room):
     def __init__(self):
-        super().__init__(name="Locksmith", rarity=1, gem_cost=1, color="yellow", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Locksmith_Icon.webp")
+        super().__init__(name="Locksmith", rarity=1, gem_cost=1, color="yellow", image_path="NouvelleSalleThèmeHorreur/Locksmith_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -187,7 +230,7 @@ class Locksmith(Room):
 class Maze(Room):
 
     def __init__(self):
-        super().__init__(name="Maze", rarity=1, gem_cost=0, color="Orange", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Maze_Icon.webp")
+        super().__init__(name="Maze", rarity=1, gem_cost=0, color="Orange", image_path="NouvelleSalleThèmeHorreur/Maze_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -211,7 +254,7 @@ class Maze(Room):
     
 class Bedroom(Room):
     def __init__(self):
-        super().__init__(name="Bedroom", rarity=0, gem_cost=0, color="purple", placement_condition="NotLeft",image_path="NouvelleSalleThèmeHorreur/Bedroom_Icon.webp")
+        super().__init__(name="Bedroom", rarity=0, gem_cost=0, color="purple", image_path="NouvelleSalleThèmeHorreur/Bedroom_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -224,7 +267,7 @@ class Bedroom(Room):
 
 class Closet(Room):
     def __init__(self):
-        super().__init__(name="Closet", rarity=0, gem_cost=0, color="blue", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Closet_Icon.webp")
+        super().__init__(name="Closet", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Closet_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -237,7 +280,7 @@ class Closet(Room):
 
 class Courtyard(Room):
     def __init__(self):
-        super().__init__(name="Courtyard", rarity=1, gem_cost=1, color="green", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Courtyard_Icon.webp")
+        super().__init__(name="Courtyard", rarity=1, gem_cost=1, color="green", image_path="NouvelleSalleThèmeHorreur/Courtyard_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -251,7 +294,7 @@ class Courtyard(Room):
         
 class Corridor(Room):
     def __init__(self):
-        super().__init__(name="Corridor", rarity=1, gem_cost=0, color="orange", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Corridor_Icon.webp")
+        super().__init__(name="Corridor", rarity=1, gem_cost=0, color="orange", image_path="NouvelleSalleThèmeHorreur/Corridor_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -265,7 +308,7 @@ class Corridor(Room):
 
 class Pantry(Room):
     def __init__(self):
-        super().__init__(name="Pantry", rarity=0, gem_cost=0, color="blue", placement_condition="NotLeft",image_path="NouvelleSalleThèmeHorreur/Pantry_Icon.webp")
+        super().__init__(name="Pantry", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Pantry_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -277,7 +320,7 @@ class Pantry(Room):
 
 class Thief_Storage(Room):
     def __init__(self):
-        super().__init__(name="Thief's Storage", rarity=2, gem_cost=0, color="red", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Thief_Storage_Icon.webp")
+        super().__init__(name="Thief's Storage", rarity=2, gem_cost=0, color="red", image_path="NouvelleSalleThèmeHorreur/Thief_Storage_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -291,7 +334,7 @@ class Thief_Storage(Room):
 
 class Billiard_Room(Room):
     def __init__(self):
-        super().__init__(name="Billiard Room", rarity=0, gem_cost=0, color="blue", placement_condition="NotLeft",image_path="NouvelleSalleThèmeHorreur/Billard_Room_Icon.webp")
+        super().__init__(name="Billiard Room", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Billard_Room_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -300,7 +343,7 @@ class Billiard_Room(Room):
 
 class Devil_Church(Room):
     def __init__(self):
-        super().__init__(name="Devil's Church", rarity=2, gem_cost=0, color="red", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Devil_Church_Icon.webp")
+        super().__init__(name="Devil's Church", rarity=2, gem_cost=0, color="red", image_path="NouvelleSalleThèmeHorreur/Devil_Church_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -309,7 +352,7 @@ class Devil_Church(Room):
 
 class Haunted_Gym(Room):
     def __init__(self):
-        super().__init__(name="Haunted Gym", rarity=1, gem_cost=0, color="red", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Haunted_Gym_Icon.webp")
+        super().__init__(name="Haunted Gym", rarity=1, gem_cost=0, color="red", image_path="NouvelleSalleThèmeHorreur/Haunted_Gym_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -318,7 +361,7 @@ class Haunted_Gym(Room):
 
 class Loot_Stash(Room):
     def __init__(self):
-        super().__init__(name="Loot Stash", rarity=1, gem_cost=0, color="blue", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Loot_Stash_Icon.webp")
+        super().__init__(name="Loot Stash", rarity=1, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Loot_Stash_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -327,7 +370,7 @@ class Loot_Stash(Room):
 
 class Master_Bedroom(Room):
     def __init__(self):
-        super().__init__(name="Master Bedroom", rarity=2, gem_cost=1, color="purple", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Master_Bedroom_Icon.webp")
+        super().__init__(name="Master Bedroom", rarity=2, gem_cost=1, color="purple", image_path="NouvelleSalleThèmeHorreur/Master_Bedroom_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -336,7 +379,7 @@ class Master_Bedroom(Room):
 
 class Passageway(Room):
     def __init__(self):
-        super().__init__(name="Passageway", rarity=1, gem_cost=1, color="orange", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Passageway_Icon.webp")
+        super().__init__(name="Passageway", rarity=1, gem_cost=1, color="orange", image_path="NouvelleSalleThèmeHorreur/Passageway_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -345,7 +388,7 @@ class Passageway(Room):
 
 class Patio(Room):
     def __init__(self):
-        super().__init__(name="Patio", rarity=2, gem_cost=1, color="green", placement_condition="NotLeft",image_path="NouvelleSalleThèmeHorreur/Patio_Icon.webp")
+        super().__init__(name="Patio", rarity=2, gem_cost=1, color="green", image_path="NouvelleSalleThèmeHorreur/Patio_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -354,7 +397,7 @@ class Patio(Room):
 
 class Pawn_Shop(Room):
     def __init__(self):
-        super().__init__(name="Pawn Shop", rarity=2, gem_cost=1, color="yellow", placement_condition="NotLeft",image_path="NouvelleSalleThèmeHorreur/Pawn_Shop_Icon.webp")
+        super().__init__(name="Pawn Shop", rarity=2, gem_cost=1, color="yellow", image_path="NouvelleSalleThèmeHorreur/Pawn_Shop_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -363,7 +406,7 @@ class Pawn_Shop(Room):
 
 class Pumpkin_Field(Room):
     def __init__(self):
-        super().__init__(name="Pumpkin Field", rarity=1, gem_cost=1, color="green", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Pumpkin_Field_Icon.webp")
+        super().__init__(name="Pumpkin Field", rarity=1, gem_cost=1, color="green", image_path="NouvelleSalleThèmeHorreur/Pumpkin_Field_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -372,7 +415,7 @@ class Pumpkin_Field(Room):
 
 class Statue_Hall(Room):
     def __init__(self):
-        super().__init__(name="Statue Hall", rarity=1, gem_cost=0, color="orange", placement_condition="Middle",image_path="NouvelleSalleThèmeHorreur/Statue_Hall_Icon.webp")
+        super().__init__(name="Statue Hall", rarity=1, gem_cost=0, color="orange", image_path="NouvelleSalleThèmeHorreur/Statue_Hall_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -381,7 +424,7 @@ class Statue_Hall(Room):
 
 class Chucky_Bedroom(Room):
     def __init__(self):
-        super().__init__(name="Chucky's Bedroom", rarity=2, gem_cost=0, color="purple", placement_condition="None",image_path="NouvelleSalleThèmeHorreur/Chucky_bedroom_Icon.webp")
+        super().__init__(name="Chucky's Bedroom", rarity=2, gem_cost=0, color="purple", image_path="NouvelleSalleThèmeHorreur/Chucky_bedroom_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
