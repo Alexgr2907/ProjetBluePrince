@@ -34,26 +34,17 @@ INV_CONFIRM_FONT = pygame.font.Font(None, 28)
 INV_TAB_FONT = pygame.font.Font(None, 24)
 
 # On crée un "catalogue" pour lier les noms d'objets à leurs descriptions
-# (qui viennent de objet.py)
 ITEM_CATALOG = {
-    # Consommables (Nourriture)
-    # (Pas de changement ici, objet.py a déjà les bonnes infos)
-    "Pomme": objet.Pomme(),         # "Redonne 2 pas."
-    "Banane": objet.Banane(),       # "Redonne 3 pas."
-    "Gâteau": objet.Gateau(),     # "Redonne 10 pas."
-    "Sandwich": objet.Sandwich(),   # "Redonne 15 pas."
-    "Repas": objet.Repas(),         # "Redonne 25 pas."
-    
-    # Permanents
-    # (Pas de changement ici, objet.py a déjà les bonnes infos)
+    "Pomme": objet.Pomme(),
+    "Banane": objet.Banane(),
+    "Gâteau": objet.Gateau(),
+    "Sandwich": objet.Sandwich(),
+    "Repas": objet.Repas(),
     "Pelle": objet.Pelle(),
     "Marteau": objet.Marteau(),
     "Kit de Crochetage": objet.KitCrochetage(),
     "Détecteur de Métaux": objet.DetecteurMetaux(),
     "Patte de Lapin": objet.PatteLapin(),
-    
-    # --- MODIFICATION ICI ---
-    # Autres (on met à jour avec les descriptions officielles)
     "Pas": objet.Objet("Pas", 
                        "Votre énergie. Vous perdez 1 pas à chaque déplacement.", "autre", 0),
     "Pièces": objet.Objet("Pièces", 
@@ -69,27 +60,56 @@ ITEM_CATALOG = {
 
 CARD_IMAGE_SIZE = 200
 CARD_PADDING = 60
-# Fonction pour dessiner du texte sur plusieurs lignes
-def draw_text_wrapped(surface, text, font, color, rect):
-    words = text.split(' ')
-    lines = []
-    current_line = ""
-    for word in words:
-        test_line = current_line + word + " "
-        if font.size(test_line)[0] < rect.width:
-            current_line = test_line
+
+# --- Fonctions d'Affichage ---
+
+def dessiner_texte_multi_lignes(surface, texte, police, couleur, rect):
+    """
+    Dessine une chaîne de caractères sur plusieurs lignes ("text wrapping")
+    pour qu'elle s'adapte à la largeur d'un rectangle donné.
+
+    Args:
+        surface (pygame.Surface): La surface sur laquelle dessiner (ex: l'écran).
+        texte (str): La chaîne de caractères à dessiner.
+        police (pygame.font.Font): La police à utiliser.
+        couleur (tuple): La couleur du texte (R, G, B).
+        rect (pygame.Rect): Le rectangle qui définit la zone de texte (largeur et position).
+    """
+    mots = texte.split(' ')
+    lignes = []
+    ligne_actuelle = ""
+    for mot in mots:
+        ligne_test = ligne_actuelle + mot + " "
+        # Vérifie si la ligne test dépasse la largeur du rectangle
+        if police.size(ligne_test)[0] < rect.width:
+            ligne_actuelle = ligne_test
         else:
-            lines.append(current_line)
-            current_line = word + " "
-    lines.append(current_line)
+            lignes.append(ligne_actuelle)
+            ligne_actuelle = mot + " "
+    lignes.append(ligne_actuelle)
     
     y = rect.top
-    for line in lines:
-        line_surface = font.render(line, True, color)
-        surface.blit(line_surface, (rect.left, y))
-        y += font.get_linesize()
-# La fonction est déplacée AVANT la boucle de jeu
-def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_state, selected_item_name, context_menu_index, confirm_index):
+    for ligne in lignes:
+        surface_ligne = police.render(ligne, True, couleur)
+        surface.blit(surface_ligne, (rect.left, y))
+        y += police.get_linesize() # Avance à la ligne suivante
+
+def dessiner_interface_inventaire(screen, inventaire, index_categorie, index_selection, sous_etat, nom_objet_selectionne, index_menu_contextuel, index_confirmation):
+    """
+    Dessine l'interface complète de l'inventaire, y compris les onglets,
+    les listes d'objets et les pop-ups de confirmation ou d'information.
+
+    Args:
+        screen (pygame.Surface): L'écran principal du jeu.
+        inventaire (Inventaire): L'objet 'Inventaire' du joueur.
+        index_categorie (int): L'index de l'onglet actif (0=Consommables, 1=Permanents, 2=Autres).
+        index_selection (int): L'index de l'objet surligné dans la liste active.
+        sous_etat (str): L'état actuel de l'inventaire ("navigation", "menu_contextuel", etc.).
+        nom_objet_selectionne (str): Le nom de l'objet actuellement sélectionné (ex: "Pomme").
+        index_menu_contextuel (int): L'index de l'option surlignée dans le menu contextuel (0="Utiliser", etc.).
+        index_confirmation (int): L'index de l'option surlignée dans le menu de confirmation (0="Confirmer", 1="Annuler").
+    """
+    
     # Dimensions de l'interface
     ui_width = SCREEN_WIDTH * 0.7
     ui_height = SCREEN_HEIGHT * 0.8
@@ -107,106 +127,101 @@ def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_sta
     screen.blit(title_text, title_rect)
     
     # Dessiner les onglets de catégorie
-    categories = ["Consommables", "Permanents", "Autres"]
-    tab_width = ui_width / len(categories)
+    categories_onglets = ["Consommables", "Permanents", "Autres"]
+    tab_width = ui_width / len(categories_onglets)
     tab_y = ui_y + 80
     
-    for i, tab_name in enumerate(categories):
+    for i, nom_onglet in enumerate(categories_onglets):
         tab_rect = pygame.Rect(ui_x + i * tab_width, tab_y, tab_width, 40)
         
-        if i == category_index:
+        if i == index_categorie:
             pygame.draw.rect(screen, UI_BLUE_LIGHT, tab_rect, border_top_left_radius=8, border_top_right_radius=8)
             color = UI_HIGHLIGHT
         else:
             color = GRAY
             pygame.draw.line(screen, UI_BLUE_LIGHT, (tab_rect.left, tab_rect.bottom - 1), (tab_rect.right, tab_rect.bottom - 1), 2)
 
-        tab_text = INV_TAB_FONT.render(tab_name, True, color)
+        tab_text = INV_TAB_FONT.render(nom_onglet, True, color)
         tab_text_rect = tab_text.get_rect(center=tab_rect.center)
         screen.blit(tab_text, tab_text_rect)
     
     item_y_start = tab_y + 60
 
     # --- ONGLET 0: CONSOMMABLES ---
-    if category_index == 0:
-        consumable_list = list(inventory.objets.items())
+    if index_categorie == 0:
+        liste_consommables = list(inventaire.objets.items())
         
-        if not consumable_list:
+        if not liste_consommables:
             empty_text = INV_ITEM_FONT.render("Aucun objet consommable.", True, GRAY)
             empty_rect = empty_text.get_rect(center=(ui_rect.centerx, ui_rect.centery))
             screen.blit(empty_text, empty_rect)
         else:
-            for i, (item_name, quantity) in enumerate(consumable_list):
+            for i, (item_name, quantity) in enumerate(liste_consommables):
                 item_text_str = f"{item_name} x{quantity}"
-                color = UI_HIGHLIGHT if i == selected_index else WHITE
+                color = UI_HIGHLIGHT if i == index_selection else WHITE
                 item_text = INV_ITEM_FONT.render(item_text_str, True, color)
                 item_rect = item_text.get_rect(midleft=(ui_x + 40, item_y_start + i * 40))
                 screen.blit(item_text, item_rect)
                 
-                # MODIFICATION: Curseur visible si sélectionné (même dans sous-menu)
-                if i == selected_index:
-                    color_cercle = UI_HIGHLIGHT if sub_state == "browsing" else WHITE # Moins visible si sous-menu
+                if i == index_selection:
+                    color_cercle = UI_HIGHLIGHT if sous_etat == "navigation" else WHITE
                     pygame.draw.circle(screen, color_cercle, (ui_x + 25, item_rect.centery), 5)
 
     # --- ONGLET 1: PERMANENTS ---
-    elif category_index == 1:
-        permanent_list = []
-        if inventory.pelle: permanent_list.append("Pelle")
-        if inventory.marteau: permanent_list.append("Marteau")
-        if inventory.kit_crochetage: permanent_list.append("Kit de Crochetage")
-        if inventory.detecteur_métaux: permanent_list.append("Détecteur de Métaux")
-        if inventory.patte_lapin: permanent_list.append("Patte de Lapin")
+    elif index_categorie == 1:
+        liste_permanents = []
+        if inventaire.pelle: liste_permanents.append("Pelle")
+        if inventaire.marteau: liste_permanents.append("Marteau")
+        if inventaire.kit_crochetage: liste_permanents.append("Kit de Crochetage")
+        if inventaire.detecteur_métaux: liste_permanents.append("Détecteur de Métaux")
+        if inventaire.patte_lapin: liste_permanents.append("Patte de Lapin")
         
-        if not permanent_list:
+        if not liste_permanents:
             empty_text = INV_ITEM_FONT.render("Aucun objet permanent.", True, GRAY)
             empty_rect = empty_text.get_rect(center=(ui_rect.centerx, ui_rect.centery))
             screen.blit(empty_text, empty_rect)
         else:
-            for i, item_name in enumerate(permanent_list):
-                # MODIFICATION: Logique de sélection
+            for i, item_name in enumerate(liste_permanents):
                 item_text_str = item_name
-                color = UI_HIGHLIGHT if i == selected_index else WHITE
+                color = UI_HIGHLIGHT if i == index_selection else WHITE
                 item_text = INV_ITEM_FONT.render(item_text_str, True, color)
                 item_rect = item_text.get_rect(midleft=(ui_x + 40, item_y_start + i * 40))
                 screen.blit(item_text, item_rect)
                 
-                if i == selected_index:
-                    color_cercle = UI_HIGHLIGHT if sub_state == "browsing" else WHITE
+                if i == index_selection:
+                    color_cercle = UI_HIGHLIGHT if sous_etat == "navigation" else WHITE
                     pygame.draw.circle(screen, color_cercle, (ui_x + 25, item_rect.centery), 5)
 
     # --- ONGLET 2: AUTRES ---
-    elif category_index == 2:
-        # On utilise les noms de base pour la sélection, et l'affichage formaté
-        autres_list_display = [
-            f"Pas : {inventory.pas}",
-            f"Pièces : {inventory.pieces}",
-            f"Gemmes : {inventory.gemmes}",
-            f"Clés : {inventory.cles}",
-            f"Dés : {inventory.des}"
+    elif index_categorie == 2:
+        liste_autres_affichage = [
+            f"Pas : {inventaire.pas}",
+            f"Pièces : {inventaire.pieces}",
+            f"Gemmes : {inventaire.gemmes}",
+            f"Clés : {inventaire.cles}",
+            f"Dés : {inventaire.des}"
         ]
         
-        for i, item_str in enumerate(autres_list_display):
-            # MODIFICATION: Logique de sélection
-            color = UI_HIGHLIGHT if i == selected_index else WHITE
+        for i, item_str in enumerate(liste_autres_affichage):
+            color = UI_HIGHLIGHT if i == index_selection else WHITE
             item_text = INV_ITEM_FONT.render(item_str, True, color)
             item_rect = item_text.get_rect(midleft=(ui_x + 40, item_y_start + i * 40))
             screen.blit(item_text, item_rect)
 
-            if i == selected_index:
-                color_cercle = UI_HIGHLIGHT if sub_state == "browsing" else WHITE
+            if i == index_selection:
+                color_cercle = UI_HIGHLIGHT if sous_etat == "navigation" else WHITE
                 pygame.draw.circle(screen, color_cercle, (ui_x + 25, item_rect.centery), 5)
 
     # --- POP-UP : MENU CONTEXTUEL (Dynamique) ---
-    if sub_state == "context_menu":
-        # MODIFICATION: Options dynamiques
-        if category_index == 0:
-            options = ["Utiliser", "Infos", "Retour"]
+    if sous_etat == "menu_contextuel":
+        if index_categorie == 0:
+            options_menu = ["Utiliser", "Infos", "Retour"]
             ctx_height = 120
-        else: # Catégories 1 et 2
-            options = ["Infos", "Retour"]
+        else:
+            options_menu = ["Infos", "Retour"]
             ctx_height = 90
             
-        selected_item_y = item_y_start + selected_index * 40
+        selected_item_y = item_y_start + index_selection * 40
         ctx_width = 150
         
         ctx_x = ui_x + 300 
@@ -216,15 +231,14 @@ def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_sta
         pygame.draw.rect(screen, BLACK, ctx_rect, border_radius=10)
         pygame.draw.rect(screen, WHITE, ctx_rect, width=2, border_radius=10)
 
-        for i, option in enumerate(options):
-            color = UI_HIGHLIGHT if i == context_menu_index else WHITE
+        for i, option in enumerate(options_menu):
+            color = UI_HIGHLIGHT if i == index_menu_contextuel else WHITE
             option_text = INV_ITEM_FONT.render(option, True, color)
             option_rect = option_text.get_rect(midleft=(ctx_x + 20, ctx_y + 30 + i * 30))
             screen.blit(option_text, option_rect)
 
     # --- POP-UP : CONFIRMATION D'UTILISATION ---
-    elif sub_state == "confirming_use" and selected_item_name:
-        # ... (Pas de changement ici) ...
+    elif sous_etat == "confirmation_utilisation" and nom_objet_selectionne:
         confirm_width = 400
         confirm_height = 150
         confirm_x = (SCREEN_WIDTH - confirm_width) / 2
@@ -234,7 +248,7 @@ def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_sta
         pygame.draw.rect(screen, BLACK, confirm_rect, border_radius=10)
         pygame.draw.rect(screen, WHITE, confirm_rect, width=3, border_radius=10)
         
-        question_str = f"Voulez-vous utiliser 1 {selected_item_name} ?"
+        question_str = f"Voulez-vous utiliser 1 {nom_objet_selectionne} ?"
         question_text = INV_CONFIRM_FONT.render(question_str, True, WHITE)
         question_rect = question_text.get_rect(center=(confirm_rect.centerx, confirm_y + 30))
         screen.blit(question_text, question_rect)
@@ -242,8 +256,8 @@ def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_sta
         confirm_btn_text_str = "Confirmer (Entrée)"
         cancel_btn_text_str = "Annuler (Echap)"
         
-        confirm_color = UI_HIGHLIGHT if confirm_index == 0 else GRAY
-        cancel_color = UI_HIGHLIGHT if confirm_index == 1 else GRAY
+        confirm_color = UI_HIGHLIGHT if index_confirmation == 0 else GRAY
+        cancel_color = UI_HIGHLIGHT if index_confirmation == 1 else GRAY
         
         confirm_btn_text = INV_CONFIRM_FONT.render(confirm_btn_text_str, True, confirm_color)
         cancel_btn_text = INV_CONFIRM_FONT.render(cancel_btn_text_str, True, cancel_color)
@@ -255,10 +269,9 @@ def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_sta
         screen.blit(cancel_btn_text, cancel_btn_rect)
     
     # --- POP-UP : INFO OBJET ---
-    # --- POP-UP : INFO OBJET ---
-    elif sub_state == "showing_info":
+    elif sous_etat == "affichage_info":
         info_width = 400
-        info_height = 200 # Augmenté pour le texte
+        info_height = 200 
         info_x = (SCREEN_WIDTH - info_width) / 2
         info_y = (SCREEN_HEIGHT - info_height) / 2
         info_rect = pygame.Rect(info_x, info_y, info_width, info_height)
@@ -266,31 +279,29 @@ def draw_inventory_ui(screen, inventory, category_index, selected_index, sub_sta
         pygame.draw.rect(screen, BLACK, info_rect, border_radius=10)
         pygame.draw.rect(screen, WHITE, info_rect, width=3, border_radius=10)
         
-        # Titre (Nom de l'objet)
-        title_str = selected_item_name
+        title_str = nom_objet_selectionne
         title_text = INV_CONFIRM_FONT.render(title_str, True, UI_HIGHLIGHT)
         title_rect = title_text.get_rect(center=(info_rect.centerx, info_y + 30))
         screen.blit(title_text, title_rect)
 
-        # MODIFICATION: On va chercher la description dans le CATALOGUE
-        info_str = "Aucune info pour le moment." # Par défaut
-        if selected_item_name in ITEM_CATALOG:
-            info_str = ITEM_CATALOG[selected_item_name].description
+        info_str = "Aucune info pour le moment." 
+        if nom_objet_selectionne in ITEM_CATALOG:
+            info_str = ITEM_CATALOG[nom_objet_selectionne].description
         
-        # On définit le rectangle pour le texte
         text_rect = pygame.Rect(info_x + 20, info_y + 60, info_width - 40, info_height - 90)
-        # On dessine le texte avec la fonction "wrap"
-        draw_text_wrapped(screen, info_str, INV_TAB_FONT, WHITE, text_rect)
+        # Utilise la fonction de multi-lignes
+        dessiner_texte_multi_lignes(screen, info_str, INV_TAB_FONT, WHITE, text_rect)
 
-        # Quitter
         close_str = "Appuyez sur Entrée ou Echap pour fermer"
         close_text = INV_TAB_FONT.render(close_str, True, GRAY) 
         close_rect = close_text.get_rect(center=(info_rect.centerx, info_y + info_height - 30))
         screen.blit(close_text, close_rect)
 
 
+# --- INITIALISATION DU JEU ---
+
 # Créer la grille du manoir
-manor_grid = [[None for _ in range(MANOR_WIDTH)] for _ in range(MANOR_HEIGHT)]
+grille_manoir = [[None for _ in range(MANOR_WIDTH)] for _ in range(MANOR_HEIGHT)]
 
 # Configuration de la fenêtre
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN) 
@@ -303,8 +314,8 @@ player_x = 2
 player_y = 8
 
 # Place la salle de départ 
-start_room = Horror_Hall() 
-manor_grid[player_y][player_x] = start_room 
+salle_depart = Horror_Hall() 
+grille_manoir[player_y][player_x] = salle_depart 
 
 # Sélection de la cible
 target_x = player_x
@@ -312,98 +323,98 @@ target_y = player_y
 selected_direction = None
 
 # Instance de l'inventaire
-player_inventory = Inventaire()
+inventaire_joueur = Inventaire()
 # Ligne de triche pour tester (à enlever plus tard)
 # (Décommentez-les pour tester l'inventaire !)
-# player_inventory.objets["Pomme"] = 3 
-# player_inventory.objets["Banane"] = 1 
+# inventaire_joueur.objets["Pomme"] = 3 
+# inventaire_joueur.objets["Banane"] = 1 
 
 
 # Deck de pièces
-main_deck = create_initial_deck()
+pioche_principale = create_initial_deck()
 
 # GESTION D'ÉTAT 
-game_state = "moving" # "moving", "selecting_room", ou "inventory"
-current_room_selection = [] 
+en_cours = True
+etat_du_jeu = "deplacement" # "deplacement", "selection_salle", ou "inventaire"
+selection_salle_actuelle = [] 
 
 # Variables pour l'état de l'inventaire
-inventory_selected_index = 0
-inventory_category_index = 0 
-inventory_sub_state = "browsing" 
-selected_item_name = None 
-context_menu_index = 0 
-confirm_selected_index = 0 
+index_selection_inv = 0
+index_categorie_inv = 0 
+sous_etat_inv = "navigation" # "navigation", "menu_contextuel", "confirmation_utilisation", "affichage_info"
+nom_objet_selectionne = None 
+index_menu_contextuel = 0 
+index_confirmation = 0 
 
 # Variables pour les messages feedback 
-feedback_message = ""
-feedback_message_time = 0
+message_feedback = ""
+temps_message_feedback = 0
 
-# Boucle de jeu principale
-running = True
-while running:
+# --- BOUCLE DE JEU PRINCIPALE ---
+while en_cours:
     # --- Définir les listes actuelles pour la navigation ---
     # (On fait ça au début de la boucle pour y avoir accès partout)
-    consumable_list = list(player_inventory.objets.keys())
+    liste_consommables = list(inventaire_joueur.objets.keys())
     
-    permanent_list = []
-    if player_inventory.pelle: permanent_list.append("Pelle")
-    if player_inventory.marteau: permanent_list.append("Marteau")
-    if player_inventory.kit_crochetage: permanent_list.append("Kit de Crochetage")
-    if player_inventory.detecteur_métaux: permanent_list.append("Détecteur de Métaux")
-    if player_inventory.patte_lapin: permanent_list.append("Patte de Lapin")
+    liste_permanents = []
+    if inventaire_joueur.pelle: liste_permanents.append("Pelle")
+    if inventaire_joueur.marteau: liste_permanents.append("Marteau")
+    if inventaire_joueur.kit_crochetage: liste_permanents.append("Kit de Crochetage")
+    if inventaire_joueur.detecteur_métaux: liste_permanents.append("Détecteur de Métaux")
+    if inventaire_joueur.patte_lapin: liste_permanents.append("Patte de Lapin")
 
-    autres_list = ["Pas", "Pièces", "Gemmes", "Clés", "Dés"]
+    liste_autres = ["Pas", "Pièces", "Gemmes", "Clés", "Dés"]
 
     # Déterminer la liste active et sa taille
-    active_list = []
-    if inventory_category_index == 0:
-        active_list = consumable_list
-    elif inventory_category_index == 1:
-        active_list = permanent_list
-    elif inventory_category_index == 2:
-        active_list = autres_list
+    liste_active = []
+    if index_categorie_inv == 0:
+        liste_active = liste_consommables
+    elif index_categorie_inv == 1:
+        liste_active = liste_permanents
+    elif index_categorie_inv == 2:
+        liste_active = liste_autres
     
-    active_list_len = len(active_list)
+    longueur_liste_active = len(liste_active)
 
 
     # Gestion des événements
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            en_cours = False
         
         if event.type == pygame.KEYDOWN:
             
             # --- GESTION ECHAP ---
             if event.key == pygame.K_ESCAPE:
-                if game_state == "selecting_room":
-                    game_state = "moving"
-                    current_room_selection = []
+                if etat_du_jeu == "selection_salle":
+                    etat_du_jeu = "deplacement"
+                    selection_salle_actuelle = []
                     selected_direction = None
                 
-                elif game_state == "inventory":
-                    if inventory_sub_state == "confirming_use":
-                        inventory_sub_state = "context_menu" 
-                    elif inventory_sub_state == "showing_info":
-                        inventory_sub_state = "context_menu" 
-                    elif inventory_sub_state == "context_menu":
-                        inventory_sub_state = "browsing" 
-                    else: # "browsing"
-                        game_state = "moving" 
+                elif etat_du_jeu == "inventaire":
+                    if sous_etat_inv == "confirmation_utilisation":
+                        sous_etat_inv = "menu_contextuel" 
+                    elif sous_etat_inv == "affichage_info":
+                        sous_etat_inv = "menu_contextuel" 
+                    elif sous_etat_inv == "menu_contextuel":
+                        sous_etat_inv = "navigation" 
+                    else: # "navigation"
+                        etat_du_jeu = "deplacement" 
                 
-                else: # "moving"
-                    running = False
+                else: # "deplacement"
+                    en_cours = False
             
             #  ÉTAT 1: LE JOUEUR SE DÉPLACE SUR LA GRILLE
-            if game_state == "moving":
+            if etat_du_jeu == "deplacement":
                 
                 if event.key == pygame.K_i:
-                    game_state = "inventory"
-                    inventory_selected_index = 0
-                    inventory_category_index = 0 
-                    inventory_sub_state = "browsing"
+                    etat_du_jeu = "inventaire"
+                    index_selection_inv = 0
+                    index_categorie_inv = 0 
+                    sous_etat_inv = "navigation"
                     continue 
 
-                # ... (logique ZQSD inchangée) ...
+                # Logique de SÉLECTION (ZQSD)
                 if event.key == pygame.K_z: 
                     selected_direction = 'up'
                     target_x = player_x
@@ -421,11 +432,11 @@ while running:
                     target_x = min(MANOR_WIDTH - 1, player_x + 1)
                     target_y = player_y
                 
-                # ... (logique Espace/Entrée inchangée) ...
+                # Logique de VALIDATION (Espace / Entrée)
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     if selected_direction is not None and (target_x != player_x or target_y != player_y):
                         
-                        current_room = manor_grid[player_y][player_x]
+                        current_room = grille_manoir[player_y][player_x]
                         current_doors = current_room.get_rotated_doors()
                         
                         has_exit = False
@@ -435,24 +446,26 @@ while running:
                         elif selected_direction == 'right' and current_doors['east']: has_exit = True
 
                         if not has_exit:
-                            feedback_message = "Il n'y a pas d'accès de ce côté"
-                            feedback_message_time = pygame.time.get_ticks() + 2000
+                            message_feedback = "Il n'y a pas d'accès de ce côté"
+                            temps_message_feedback = pygame.time.get_ticks() + 2000
                             selected_direction = None 
                             target_x = player_x
                             target_y = player_y
                             continue 
                         
-                        target_cell = manor_grid[target_y][target_x]
+                        target_cell = grille_manoir[target_y][target_x]
                         
+                        # CAS 1: CASE VIDE (NOUVELLE PIÈCE) 
                         if target_cell is None: 
-                            current_room_selection = draw_three_rooms(main_deck, player_inventory.gemmes, manor_grid, target_x, target_y, player_x, player_y)
-                            if current_room_selection: 
-                                game_state = "selecting_room"
+                            selection_salle_actuelle = draw_three_rooms(pioche_principale, inventaire_joueur.gemmes, grille_manoir, target_x, target_y, player_x, player_y)
+                            if selection_salle_actuelle: 
+                                etat_du_jeu = "selection_salle"
                             else:
-                                feedback_message = "Aucune pièce ne peut aller ici !"
-                                feedback_message_time = pygame.time.get_ticks() + 2000
+                                message_feedback = "Aucune pièce ne peut aller ici !"
+                                temps_message_feedback = pygame.time.get_ticks() + 2000
                                 selected_direction = None
                         
+                        # CAS 2: CASE DÉJÀ DÉCOUVERTE 
                         else:
                             target_doors = target_cell.get_rotated_doors()
                             has_entry = False
@@ -464,14 +477,14 @@ while running:
                             if has_entry:
                                 player_x = target_x
                                 player_y = target_y
-                                player_inventory.pas -= 1
+                                inventaire_joueur.pas -= 1
                                 target_cell.apply_every_entry_effect(None) 
                                 selected_direction = None
                                 target_x = player_x
                                 target_y = player_y
                             else:
-                                feedback_message = "Il n'y a pas d'accès de ce côté"
-                                feedback_message_time = pygame.time.get_ticks() + 2000
+                                message_feedback = "Il n'y a pas d'accès de ce côté"
+                                temps_message_feedback = pygame.time.get_ticks() + 2000
                                 selected_direction = None
                                 target_x = player_x
                                 target_y = player_y
@@ -482,122 +495,116 @@ while running:
                     target_y = player_y
             
             # ÉTAT 2: LE JOUEUR CHOISIT UNE PIÈCE
-            elif game_state == "selecting_room":
-                # ... (logique inchangée) ...
+            elif etat_du_jeu == "selection_salle":
                 choice = -1
                 if event.key == pygame.K_q: choice = 0
                 elif event.key == pygame.K_s: choice = 1
                 elif event.key == pygame.K_d: choice = 2
                 
-                if 0 <= choice < len(current_room_selection):
-                    chosen_room = current_room_selection[choice]
+                if 0 <= choice < len(selection_salle_actuelle):
+                    chosen_room = selection_salle_actuelle[choice]
                     
-                    if player_inventory.gemmes >= chosen_room.gem_cost:
-                        player_inventory.gemmes -= chosen_room.gem_cost
+                    if inventaire_joueur.gemmes >= chosen_room.gem_cost:
+                        inventaire_joueur.gemmes -= chosen_room.gem_cost
                         chosen_room.rotation = chosen_room.valid_rotation[0]
-                        manor_grid[target_y][target_x] = chosen_room
+                        grille_manoir[target_y][target_x] = chosen_room
                         
-                        if chosen_room in main_deck:
-                            main_deck.remove(chosen_room)
+                        if chosen_room in pioche_principale:
+                            pioche_principale.remove(chosen_room)
                         
                         player_x = target_x
                         player_y = target_y
-                        player_inventory.pas -= 1
+                        inventaire_joueur.pas -= 1
                         chosen_room.apply_entry_effect(None) 
-                        game_state = "moving"
-                        current_room_selection = []
+                        etat_du_jeu = "deplacement"
+                        selection_salle_actuelle = []
                         selected_direction = None
                         target_x = player_x
                         target_y = player_y
                     else:
-                        feedback_message = "Pas assez de gemmes !"
-                        feedback_message_time = pygame.time.get_ticks() + 2000
+                        message_feedback = "Pas assez de gemmes !"
+                        temps_message_feedback = pygame.time.get_ticks() + 2000
                 
                 elif event.key == pygame.K_BACKSPACE:
-                    game_state = "moving"
-                    current_room_selection = []
+                    etat_du_jeu = "deplacement"
+                    selection_salle_actuelle = []
                     selected_direction = None
 
-            # ÉTAT 3: LE JOUEUR EST DANS L'INVENTAIRE (Logique refaite)
-            elif game_state == "inventory":
+            # ÉTAT 3: LE JOUEUR EST DANS L'INVENTAIRE
+            elif etat_du_jeu == "inventaire":
                 
                 if event.key == pygame.K_i:
-                    game_state = "moving"
+                    etat_du_jeu = "deplacement"
                     continue
                 
                 # SOUS-ÉTAT 1: Navigation principale
-                if inventory_sub_state == "browsing":
+                if sous_etat_inv == "navigation":
                     if event.key == pygame.K_q: # Onglet gauche
-                        inventory_category_index = (inventory_category_index - 1) % 3 
-                        inventory_selected_index = 0 
+                        index_categorie_inv = (index_categorie_inv - 1) % 3 
+                        index_selection_inv = 0 
                     elif event.key == pygame.K_d: # Onglet droit
-                        inventory_category_index = (inventory_category_index + 1) % 3
-                        inventory_selected_index = 0 
+                        index_categorie_inv = (index_categorie_inv + 1) % 3
+                        index_selection_inv = 0 
                     
-                    # MODIFICATION: Navigation Z/S unifiée
                     elif event.key == pygame.K_z: # Haut
-                        inventory_selected_index = (inventory_selected_index - 1) % active_list_len if active_list_len > 0 else 0
+                        index_selection_inv = (index_selection_inv - 1) % longueur_liste_active if longueur_liste_active > 0 else 0
                     elif event.key == pygame.K_s: # Bas
-                        inventory_selected_index = (inventory_selected_index + 1) % active_list_len if active_list_len > 0 else 0
+                        index_selection_inv = (index_selection_inv + 1) % longueur_liste_active if longueur_liste_active > 0 else 0
                     
-                    # MODIFICATION: Sélection (Entrée) unifiée
                     elif event.key == pygame.K_RETURN: 
-                        if active_list_len > 0:
-                            selected_item_name = active_list[inventory_selected_index]
-                            inventory_sub_state = "context_menu"
-                            context_menu_index = 0 # Toujours reset à 0
+                        if longueur_liste_active > 0:
+                            nom_objet_selectionne = liste_active[index_selection_inv]
+                            sous_etat_inv = "menu_contextuel"
+                            index_menu_contextuel = 0 
                 
                 # SOUS-ÉTAT 2: Menu contextuel (Utiliser, Infos, Retour)
-                elif inventory_sub_state == "context_menu":
-                    # Définir les options valides pour ce menu
-                    if inventory_category_index == 0:
-                        options = ["Utiliser", "Infos", "Retour"]
+                elif sous_etat_inv == "menu_contextuel":
+                    if index_categorie_inv == 0:
+                        options_menu = ["Utiliser", "Infos", "Retour"]
                     else:
-                        options = ["Infos", "Retour"]
+                        options_menu = ["Infos", "Retour"]
                     
-                    max_index = len(options) - 1
+                    max_index = len(options_menu) - 1
 
-                    if event.key == pygame.K_z: # Haut
-                        context_menu_index = max(0, context_menu_index - 1)
-                    elif event.key == pygame.K_s: # Bas
-                        context_menu_index = min(max_index, context_menu_index + 1)
+                    if event.key == pygame.K_z: 
+                        index_menu_contextuel = max(0, index_menu_contextuel - 1)
+                    elif event.key == pygame.K_s: 
+                        index_menu_contextuel = min(max_index, index_menu_contextuel + 1)
                     
                     elif event.key == pygame.K_RETURN:
-                        selected_option = options[context_menu_index]
+                        selected_option = options_menu[index_menu_contextuel]
                         
                         if selected_option == "Utiliser":
-                            inventory_sub_state = "confirming_use"
-                            confirm_selected_index = 0 
+                            sous_etat_inv = "confirmation_utilisation"
+                            index_confirmation = 0 
                         elif selected_option == "Infos":
-                            inventory_sub_state = "showing_info"
+                            sous_etat_inv = "affichage_info"
                         elif selected_option == "Retour":
-                            inventory_sub_state = "browsing"
+                            sous_etat_inv = "navigation"
 
                 # SOUS-ÉTAT 3: Confirmation d'utilisation
-                elif inventory_sub_state == "confirming_use":
+                elif sous_etat_inv == "confirmation_utilisation":
                     if event.key == pygame.K_z or event.key == pygame.K_q: 
-                        confirm_selected_index = 0 
+                        index_confirmation = 0 
                     elif event.key == pygame.K_s or event.key == pygame.K_d: 
-                        confirm_selected_index = 1 
+                        index_confirmation = 1 
                     
                     elif event.key == pygame.K_RETURN: 
-                        if confirm_selected_index == 0: # "Confirmer"
-                            player_inventory.utiliser_objet_consommable(selected_item_name)
-                            inventory_sub_state = "browsing" # Retour à la liste
-                            selected_item_name = None
-                            # L'index sera recalculé au prochain tour de boucle
+                        if index_confirmation == 0: # "Confirmer"
+                            inventaire_joueur.utiliser_objet_consommable(nom_objet_selectionne)
+                            sous_etat_inv = "navigation" 
+                            nom_objet_selectionne = None
                         else: # "Annuler"
-                            inventory_sub_state = "context_menu" 
+                            sous_etat_inv = "menu_contextuel" 
                 
                 # SOUS-ÉTAT 4: Fenêtre d'infos
-                elif inventory_sub_state == "showing_info":
+                elif sous_etat_inv == "affichage_info":
                     if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
-                        inventory_sub_state = "context_menu" 
+                        sous_etat_inv = "menu_contextuel" 
 
 
     # Logique de fin de partie (défaite)
-    if player_inventory.pas <= 0:
-        # ... (inchangé) ...
+    if inventaire_joueur.pas <= 0:
         screen.fill(BLACK)
         font_large = pygame.font.Font(None, 100)
         perdu_text = font_large.render("Perdu !", True, RED)
@@ -605,19 +612,19 @@ while running:
         screen.blit(perdu_text, perdu_rect)
         pygame.display.flip()
         pygame.time.wait(3000)
-        running = False
+        en_cours = False
         continue 
 
     # --- AFFICHAGE ---
     screen.fill(BLACK) 
     
-    # ... (dessin grille, pièces, curseurs, hud, feedback, room_selection - tout inchangé) ...
-    
+    # Calculer le décalage pour centrer la grille
     grid_total_width = MANOR_WIDTH * GRID_SIZE
     grid_total_height = MANOR_HEIGHT * GRID_SIZE
     start_x = (SCREEN_WIDTH - grid_total_width) // 2
     start_y = (SCREEN_HEIGHT - grid_total_height) // 2
 
+    # Dessiner la grille 5x9
     for x_idx in range(MANOR_WIDTH + 1):
         x_pos = start_x + x_idx * GRID_SIZE
         pygame.draw.line(screen, GRAY, (x_pos, start_y), (x_pos, start_y + grid_total_height))
@@ -625,9 +632,10 @@ while running:
         y_pos = start_y + y_idx * GRID_SIZE
         pygame.draw.line(screen, GRAY, (start_x, y_pos), (start_x + grid_total_width, y_pos))
 
+    # Dessiner les pièces 
     for y_idx in range(MANOR_HEIGHT):
         for x_idx in range(MANOR_WIDTH):
-            room = manor_grid[y_idx][x_idx]
+            room = grille_manoir[y_idx][x_idx]
             if room is not None:
                 piece_rect = pygame.Rect(start_x + x_idx * GRID_SIZE, start_y + y_idx * GRID_SIZE, GRID_SIZE, GRID_SIZE)
                 if room.image: 
@@ -641,12 +649,14 @@ while running:
                     text_rect = room_name_text.get_rect(center=(piece_rect.centerx, piece_rect.centery))
                     screen.blit(room_name_text, text_rect)
     
+    # Dessine le curseur du JOUEUR
     player_pixel_x = start_x + player_x * GRID_SIZE
     player_pixel_y = start_y + player_y * GRID_SIZE
     player_cursor = pygame.Rect(player_pixel_x, player_pixel_y, GRID_SIZE, GRID_SIZE)
     pygame.draw.rect(screen, PLAYER_COLOR, player_cursor, 2)  
 
-    if selected_direction is not None and game_state == "moving":
+    # Dessine le curseur de SÉLECTION
+    if selected_direction is not None and etat_du_jeu == "deplacement":
         target_pixel_x = start_x + target_x * GRID_SIZE
         target_pixel_y = start_y + target_y * GRID_SIZE
         target_cursor = pygame.Rect(target_pixel_x, target_pixel_y, GRID_SIZE, GRID_SIZE)
@@ -654,22 +664,24 @@ while running:
 
     
 
-    if feedback_message and pygame.time.get_ticks() < feedback_message_time:
+    # AFFICHER LE MESSAGE FEEDBACK 
+    if message_feedback and pygame.time.get_ticks() < temps_message_feedback:
         message_x = start_x + grid_total_width + 20 
         message_y = start_y + (grid_total_height // 2) 
-        message_text = MENU_CARD_FONT.render(feedback_message, True, RED) 
+        message_text = MENU_CARD_FONT.render(message_feedback, True, RED) 
         message_rect = message_text.get_rect(midleft=(message_x, message_y))
         screen.blit(message_text, message_rect)
-    elif pygame.time.get_ticks() >= feedback_message_time:
-        feedback_message = "" 
+    elif pygame.time.get_ticks() >= temps_message_feedback:
+        message_feedback = "" 
 
-    if game_state == "selecting_room":
-        num_cards = len(current_room_selection)
+    # DESSINER LE MENU DE SÉLECTION DE PIÈCE
+    if etat_du_jeu == "selection_salle":
+        num_cards = len(selection_salle_actuelle)
         total_cards_width = (num_cards * CARD_IMAGE_SIZE) + ((num_cards - 1) * CARD_PADDING)
         start_menu_x = (SCREEN_WIDTH - total_cards_width) // 2
         y_pos_image = (SCREEN_HEIGHT - CARD_IMAGE_SIZE) // 2
         keys_to_show = ['Q', 'S', 'D']
-        for i, room in enumerate(current_room_selection):
+        for i, room in enumerate(selection_salle_actuelle):
             x_pos = start_menu_x + i * (CARD_IMAGE_SIZE + CARD_PADDING) 
             display_rotation = 0
             if room.valid_rotations: display_rotation = room.valid_rotations[0]
@@ -683,7 +695,7 @@ while running:
             name_text = MENU_CARD_FONT.render(room.name, True, WHITE)
             name_rect = name_text.get_rect(center=(x_pos + CARD_IMAGE_SIZE // 2, y_pos_image + CARD_IMAGE_SIZE + 30))
             screen.blit(name_text, name_rect)
-            gem_color = WHITE if player_inventory.gemmes >= room.gem_cost else RED
+            gem_color = WHITE if inventaire_joueur.gemmes >= room.gem_cost else RED
             gem_text_str = f"Coût: {room.gem_cost} Gemmes"
             gem_text = MENU_CARD_FONT.render(gem_text_str, True, gem_color)
             gem_rect = gem_text.get_rect(center=(x_pos + CARD_IMAGE_SIZE // 2, y_pos_image + CARD_IMAGE_SIZE + 55))
@@ -695,15 +707,15 @@ while running:
                 pygame.draw.rect(screen, WHITE, key_bg_rect, border_radius=5)
                 screen.blit(key_text, key_text.get_rect(center=key_bg_rect.center))
     
-    # MODIFICATION: L'appel envoie maintenant tous les nouveaux états
-    if game_state == "inventory":
-        draw_inventory_ui(screen, player_inventory, 
-                          inventory_category_index, 
-                          inventory_selected_index, 
-                          inventory_sub_state, 
-                          selected_item_name,
-                          context_menu_index, 
-                          confirm_selected_index)
+    # DESSINER L'INTERFACE DE L'INVENTAIRE
+    if etat_du_jeu == "inventaire":
+        dessiner_interface_inventaire(screen, inventaire_joueur, 
+                                      index_categorie_inv, 
+                                      index_selection_inv, 
+                                      sous_etat_inv, 
+                                      nom_objet_selectionne,
+                                      index_menu_contextuel, 
+                                      index_confirmation)
 
     # Mettre à jour l'affichage
     pygame.display.flip()
