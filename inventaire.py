@@ -1,17 +1,21 @@
+import objet
 
 class Inventaire:
-    def __init__(self, pas = 70 , pieces = 0 ,gemmes = 2 , clés = 0, dés = 0):
+    def __init__(self, pas = 70 , pieces = 0 ,gemmes = 2 , cles = 0, des = 0):
         self.pas = pas
         self.pieces = pieces
         self.gemmes = gemmes
-        self.clés = clés
-        self.dés = dés
+        self.cles = cles
+        self.des = des
 
+        self.objets = {}
+        
         self.pelle = True
         self.patte_lapin = True
         self.kit_crochetage = True
         self.marteau = False
         self.detecteur_métaux = False
+        
 
     def depenser_piece(self, montant):
         if self.pieces >= montant :
@@ -27,82 +31,98 @@ class Inventaire:
         else :
             return False   
 
-    def depenser_clés(self, montant):
-        if self.clés >= montant :
-            self.clés -= montant
-            return True
-        else :
-            return False   
-    
-    def depenser_dés(self, montant):
-        if self.dés >= montant :
-            self.dés -= montant
+    def depenser_cles(self, montant):
+        if self.cles >= montant :
+            self.cles -= montant
             return True
         else :
             return False
-        
-    def ramasser_objet_permanent(self, nom_objet):
-        #vérifie si l'objet (self) possede bien un attribut qui correspond à nom_objet
-        if hasattr(self, nom_objet): 
-            #récupere la valeur de l'attribut, ici si c'est False on va définir la valeur à True
-            if not getattr(self, nom_objet):  
-                setattr(self, nom_objet, True)
-                print(f" Vous avez trouvé l'objet permanent : {nom_objet}")
+
+    def depenser_des(self, montant):
+        if self.des >= montant :
+            self.des -= montant
+            return True
+        else :
+            return False
+
+
+    def ramasser_objet(self, nouvel_objet):
+
+        if isinstance(nouvel_objet, objet.Consommable):
+
+            if isinstance(nouvel_objet, objet.Ressource): 
+
+                if nouvel_objet.nom == "Pièces":
+                    self.pieces += nouvel_objet.quantite
+                elif nouvel_objet.nom == "Gemmes":
+                    self.gemmes += nouvel_objet.quantite
+                elif nouvel_objet.nom == "Dés":
+                    self.des += nouvel_objet.quantite
+                elif nouvel_objet.nom == "Clés":
+                    self.cles += nouvel_objet.quantite
+
+                print(f" Ressource ramassée : + {nouvel_objet.quantite} {nouvel_objet.nom} .")
                 return True
-            else :
-                print(f"Vous possédez déjà l'objet :{nom_objet}")
+                    
+            else:
+                nom = nouvel_objet.nom
+                if nom in self.objets:
+                    self.objets[nom] += 1
+                    print(f"Nourriture ramassée : {nom} (Total: {self.objets[nom]}).")
+                else:
+                    self.objets[nom] = 1
+                    print(f"Nourriture ramassée : {nom}.")
+                return True
+        
+        elif isinstance(nouvel_objet, objet.Permanent):
+            attribut_inventaire = nouvel_objet.nom.lower().replace(" ", "_")
+            if hasattr(self, attribut_inventaire):
+                if not getattr(self, attribut_inventaire):
+                    nouvel_objet.utiliser(self)
+                    print(f" Vous avez trouvé l'objet permanent : {nouvel_objet.nom} ")
+                    return True
+                else:
+                    print(f" Vous avez déjà l'objet permanent : {nouvel_objet.nom} ")
+                    return False
+            else:
+                print(f"Erreur : L'objet permanent {nouvel_objet.nom} n'existe pas dans l'inventaire.")
                 return False
-        else :
-            print(f"Erreur : L'objet permanent {nom_objet} n'existe pas.")
+
+        else:
+            print(f"Erreur : Type d'objet inconnu {nouvel_objet.nom} .")
             return False
 
 
-from abc import ABC, abstractmethod
-
-class Consommables(ABC):
-    def __init__(self, nom, gain_pas):
-        self.nom = nom
-        self.gain_pas = gain_pas
     
-    @abstractmethod
-    def utiliser(self, inventaire):
-        inventaire.pas += self.gain_pas
-        print(f"Vous avez gagné {self.gain_pas} pas en utilisant l'objet {self.nom}")
+    def utiliser_objet_consommable(self, nom_objet :str):
 
-class Pomme(Consommables):
-    def __init__(self):
-        super().__init__("Pomme", gain_pas = 2)
+        if nom_objet in self.objets and self.objets[nom_objet] > 0:
+            catalogue = {
+                "Pomme": objet.Pomme(),
+                "Banane": objet.Banane(),
+                "Gâteau": objet.Gateau(),
+                "Sandwich": objet.Sandwich(),
+                "Repas": objet.Repas()
+            }
+    
+            if nom_objet in catalogue:
+                item_class = catalogue[nom_objet]   
+                item_instance = item_class()
 
-    def utiliser(self, inventaire):
-        return super().utiliser(inventaire)   
+                if item_instance.utiliser(self):
+                    self.objets[nom_objet] -= 1
+                    if self.objets[nom_objet] <= 0:
+                        del self.objets[nom_objet]
+                        print(f" Vous n'avez plus de {nom_objet} dans votre inventaire. ")
+                    return True
+        else:
+            print(f" Vous n'avez pas de {nom_objet} à utiliser. ")
+            return False
 
-class Banane(Consommables):
-    def __init__(self):
-        super().__init__("Banane", gain_pas = 3)
 
-    def utiliser(self, inventaire):
-        return super().utiliser(inventaire) 
 
-class Gâteau(Consommables):
-    def __init__(self):
-        super().__init__("Gâteau", gain_pas = 10)
 
-    def utiliser(self, inventaire):
-        return super().utiliser(inventaire)  
 
-class Sandwich(Consommables):
-    def __init__(self):
-        super().__init__("Sandwich", gain_pas = 15)
-
-    def utiliser(self, inventaire):
-        return super().utiliser(inventaire)      
-
-class Repas(Consommables):
-    def __init__(self):
-        super().__init__("Repas", gain_pas = 25)
-
-    def utiliser(self, inventaire):
-        return super().utiliser(inventaire)    
 
 
 
