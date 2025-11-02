@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import random as r
 import pygame
+import objet
 
 # dans ce fichier python ai défini toute les classes des pièces dans le jeu
 # les nom des classes, variables etc.. seront en anglais (pour une compréhension globale sur github)
@@ -126,6 +127,13 @@ class Room(ABC):
     def apply_every_entry_effect(self, player):
         """Applique un effet *à chaque fois* que le joueur entre."""
         pass # Par défaut, ne fait rien
+
+
+    def generation_objet(self, taux_drop : float = 0.5):
+        """
+        Tente de génerer un objet aléatoire
+        """
+        pass # génération dans room_manager
 
 class Midas_vault(Room):
     def __init__(self):
@@ -432,3 +440,29 @@ class Chucky_Bedroom(Room):
 
 
     
+#---------- CATALOGUE DES OBJETS ----------#
+
+proba_objets = {
+    # Ici 1 représente une rareté de 3 (légendaire) et 10 une rareté de 0 (commun), plus le poids est élevé plus l'objets a de chance d'être pioché
+    # Ressource
+    objet.Pieces : 15,
+    objet.Gemmes : 5,
+    objet.Cles : 3,
+    objet.Des : 8,
+
+    # Nourriture 
+    objet.Pomme : 12,
+    objet.Banane : 10,
+    objet.Gateau : 8,
+    objet.Sandwich : 5,
+    objet.Repas : 3,
+
+    # Permanent
+    objet.DetecteurMetaux :1,
+    objet.KitCrochetage :1,
+    objet.Marteau :1,
+    objet.PatteLapin:1,
+    objet.Pelle :1
+}
+
+

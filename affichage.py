@@ -4,6 +4,7 @@ import random
 from rooms_manager import create_initial_deck, draw_three_rooms
 from inventaire import Inventaire
 import objet
+import rooms_manager
 #  Initialisation de Pygame 
 pygame.init()
 
@@ -506,9 +507,16 @@ while en_cours:
                     
                     if inventaire_joueur.gemmes >= chosen_room.gem_cost:
                         inventaire_joueur.gemmes -= chosen_room.gem_cost
-                        chosen_room.rotation = chosen_room.valid_rotation[0]
+                        chosen_room.rotation = chosen_room.valid_rotations[0]
                         grille_manoir[target_y][target_x] = chosen_room
                         
+                        objet_rammase = rooms_manager.pioche_aleatoire_objet(taux_drop=0.1)
+                        if objet_rammase:
+                            chosen_room.objects_in_room.append(objet_rammase)
+                            print(f"Un {objet_rammase.nom} a été placé dans la {chosen_room}. ")
+                            message_feedback = f"Un {objet_rammase.nom} est apparu dans la nouvelle salle !"
+                            temps_message_feedback = pygame.time.get_ticks() + 3000
+
                         if chosen_room in pioche_principale:
                             pioche_principale.remove(chosen_room)
                         

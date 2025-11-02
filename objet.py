@@ -87,7 +87,7 @@ class Pieces(Ressource):
 #---------- CLASSE FILLE DE RESSOURCE : GEMMES ----------#
 class Gemmes(Ressource):
     def __init__(self, quantite: int):
-        super().__init__("Gemmes", quantite, rarete=1)
+        super().__init__("Gemmes", quantite, rarete=2)
 
 #---------- CLASSE FILLE DE RESSOURCE : DES ----------#
 class Des(Ressource):

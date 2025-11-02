@@ -169,3 +169,31 @@ def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y
             drawn_rooms[random.randint(0, k_value - 1)] = random.choice(zero_cost_rooms)
             
     return drawn_rooms
+
+
+
+
+def pioche_aleatoire_objet(taux_drop: float = 0.5):
+    """
+    Détermine si un objet doit être pioché et lequel
+    """
+
+    if random.random() > taux_drop :
+        return None # Aucun objet est dropé
+    
+    classes = list(proba_objets.keys())
+    poids = list(proba_objets.values())
+
+    pioche_classe = random.choices(classes, weights=poids, k=1)[0]  # Pioche une classe en fonction des poids
+
+    if issubclass(pioche_classe, objet.Ressource):
+        if pioche_classe == objet.Pieces:
+            quantite = random.randint(1,10) # On donne entre 1 et 10 pieces
+        elif pioche_classe == objet.Des or pioche_classe == objet.Gemmes:
+            quantite = random.randint(1,3)  # On donne entre 1 et 3 dés/gemmes
+        else:
+            quantite = 1  # On donne 1 clés 
+            return pioche_classe(quantite=quantite)
+    
+    return pioche_classe() # Pour tous les autres objets
+
