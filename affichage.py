@@ -318,6 +318,11 @@ player_y = 8
 salle_depart = Horror_Hall() 
 grille_manoir[player_y][player_x] = salle_depart 
 
+# Modif Alex Salle de fin (exit)
+# ajouter les coordonnées de la salle sur la grille et l'affichez (exactement comme pour Horror Hall)
+# ajouter un message de fin (" VOUS AVEZ R2USSI A VOUS ECHAPPEZZZ")
+salle_final = Exit()
+
 # Sélection de la cible
 target_x = player_x
 target_y = player_y
@@ -479,7 +484,13 @@ while en_cours:
                                 player_x = target_x
                                 player_y = target_y
                                 inventaire_joueur.pas -= 1
-                                target_cell.apply_every_entry_effect(None) 
+
+                                # Passe l'inventaire réel à la méthode
+                                msg = target_cell.apply_every_entry_effect(inventaire_joueur) 
+                                if msg: # Si la méthode retourne un message, on l'affiche
+                                    message_feedback = msg
+                                    temps_message_feedback = pygame.time.get_ticks() + 3000
+
                                 selected_direction = None
                                 target_x = player_x
                                 target_y = player_y
@@ -523,7 +534,11 @@ while en_cours:
                         player_x = target_x
                         player_y = target_y
                         inventaire_joueur.pas -= 1
-                        chosen_room.apply_entry_effect(None) 
+                        # Passe l'inventaire réel et capture un éventuel message
+                        msg = chosen_room.apply_entry_effect(inventaire_joueur) 
+                        if msg:
+                            message_feedback = msg
+                            temps_message_feedback = pygame.time.get_ticks() + 3000
                         etat_du_jeu = "deplacement"
                         selection_salle_actuelle = []
                         selected_direction = None

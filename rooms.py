@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import random as r
 import pygame
 import objet
+import inventaire
 
 # dans ce fichier python ai défini toute les classes des pièces dans le jeu
 # les nom des classes, variables etc.. seront en anglais (pour une compréhension globale sur github)
@@ -121,12 +122,12 @@ class Room(ABC):
         Applique un effet spécial la première fois que le joueur entre.
         Par défaut, la plupart des pièces n'ont pas d'effet.
         """
-        pass # Ne fait rien
+        None
 
     # Sert à appliquer un effet à chaque entrée dans la salle
     def apply_every_entry_effect(self, player):
         """Applique un effet *à chaque fois* que le joueur entre."""
-        pass # Par défaut, ne fait rien
+        None
 
 
     def generation_objet(self, taux_drop : float = 0.5):
@@ -146,9 +147,13 @@ class Midas_vault(Room):
         # On suppose que c'est la porte Sud (celle par laquelle on entre)
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': False}
 
-    def add_objects(self, player):
-        #self.objects_in_room.append(Gold(40)) 
-        pass 
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.pieces += 50 # Ajoute 50 pièces au joueur
+            self.First_time = False # Baisse le drapeau
+            # Retourne un message pour l'afficher à l'écran
+            return "Jackpot, vous trouvez 50 pièces d'or !" 
+        return None # Ne fait rien les fois suivantes
 
 class Gallery(Room):
     def __init__(self):
@@ -167,9 +172,13 @@ class Dracula_tomb(Room):
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
     
-    def add_objects(self, player):
-        # self.objects_in_room.append(Gem(3)) 
-        pass
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.gemmes += 4 # Ajoute 4 pièces
+            self.First_time = False
+            return "Vous trouvez 4 gemmes dans la tombe de Dracula"
+        return None
+        
 
 class Garage(Room):
     def __init__(self):
@@ -179,13 +188,25 @@ class Garage(Room):
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': False}
     
-    def add_objects(self, player):
-        # self.objects_in_room.append(Key(2)) 
-        pass
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.cles += 2 
+            self.First_time = False 
+            return "Vous trouvez 2 clés dans la boite à gant !" 
+        return None 
+
 
 class Horror_Hall(Room):
     def __init__(self):
         super().__init__(name="Horror Hall", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Horror_Hall_Icon.webp")
+        self.set_doors()
+
+    def set_doors(self):
+        self.door_location = {'north': True, 'south': True, 'east': True, 'west': True}
+
+class Exit(Room):
+    def __init__(self):
+        super().__init__(name="Exit", rarity=0, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Exit_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -199,15 +220,28 @@ class Joker_Office(Room):
 
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': True, 'west': True}
-    """
-    def add_objects(self, player):
-        Joker_coin = r.randint(0,1)
-        if Joker_coin == 0 :
-            # self.objects_in_room.append(Pas(-10)) 
-        else:
-            # self.objects_in_room.append(Pas(10))
-        pass
-    """
+    
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            val = r.randint(0,1)
+            if val == 0:
+                player.pieces += 10 
+
+                self.First_time = False 
+                return " La chance vous sourit! Vous gagnez 10 pièces." 
+            elif val == 1:
+                if player.pieces >= 10:
+                    player.pieces -= 10
+                else:
+                    player.pieces = 0
+
+                self.First_time = False 
+                return " Pas de chance! Vous perdez 10 pièces" 
+            
+            # Retourne un message pour l'afficher à l'écran
+            return "Vous trouvez 50 pièces d'or !" 
+        return None # Ne fait rien les fois suivantes
+
 
 class Locksmith(Room):
     def __init__(self):
@@ -267,11 +301,18 @@ class Bedroom(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': True}
-    """
+    
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.pas += 2 # Ajoute 4 pièces
+            self.First_time = False
+            return "Vous vous reposez un instant. Vous gagnez 2 pas"
+        return None
+    
     def apply_every_entry_effect(self, player):
-        #  self.objects_in_room.append(Pas(2))
-        pass
-    """
+        
+        player.pas += 2
+        return "Vous vous reposez un instant. Vous gagnez 2 pas"
 
 class Closet(Room):
     def __init__(self):
@@ -321,10 +362,13 @@ class Pantry(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': True}
-    """
-    def add_objects(self, player):
-        #self.objects_in_room.append(Gold(4))
-    """
+
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.pieces += 4 # Ajoute 4 pièces
+            self.First_time = False
+            return "Vous trouvez 4 pièces d'or."
+        return None
 
 class Thief_Storage(Room):
     def __init__(self):
@@ -357,6 +401,18 @@ class Devil_Church(Room):
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
 
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.pieces -= 1
+            self.First_time = False
+            return "Les adeptes du diables vous obligent à faire un don. Vous perdez 1 pièces"
+        return None
+    
+    def apply_every_entry_effect(self, player):
+        player.pieces -= 1
+        return "Les adeptes du diables vous obligent à faire un don. Vous perdez 1 pièces"
+        
+
 
 class Haunted_Gym(Room):
     def __init__(self):
@@ -365,6 +421,17 @@ class Haunted_Gym(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
+    
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.pieces -= 2
+            self.First_time = False
+            return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
+        return None
+    
+    def apply_every_entry_effect(self, player):
+        player.pas -= 2
+        return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
 
 
 class Loot_Stash(Room):
@@ -374,6 +441,16 @@ class Loot_Stash(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': False}
+
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.cles += 1 
+            player.gemmes += 1 
+            player.pieces += 1 
+            self.First_time = False 
+            return "En fouyant dans ce bordel, vous trouvez 1 Clé, 1 gemme et 1 pièce " 
+        return None 
+
 
 
 class Master_Bedroom(Room):
@@ -429,6 +506,12 @@ class Statue_Hall(Room):
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': True, 'west': True}
 
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.cles += 1 # Ajoute 4 pièces
+            self.First_time = False
+            return "Vous trouvez 1 Clé caché derrière une statue."
+        return None
 
 class Chucky_Bedroom(Room):
     def __init__(self):
@@ -437,6 +520,13 @@ class Chucky_Bedroom(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': False}
+    
+    def apply_entry_effect(self, player):
+        if self.First_time:
+            player.pas += 10
+            self.First_time = False
+            return "Vous entrez dans la chambre de Chucky. En la voyant, vous vous enfuyez en courant! Vous gagnez 10 pas"
+        return None
 
 
     
