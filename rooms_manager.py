@@ -2,6 +2,8 @@
 import random
 # Importe toutes les classes de ton fichier rooms.py
 from rooms import *
+import inspect
+import objet
 
 
 MANOR_WIDTH = 5
@@ -171,7 +173,7 @@ def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y
     return drawn_rooms
 
 
-
+#-------------------- Pioche aléatoire des consommables
 
 def pioche_aleatoire_objet(taux_drop: float = 0.5):
     """
@@ -184,16 +186,37 @@ def pioche_aleatoire_objet(taux_drop: float = 0.5):
     classes = list(proba_objets.keys())
     poids = list(proba_objets.values())
 
-    pioche_classe = random.choices(classes, weights=poids, k=1)[0]  # Pioche une classe en fonction des poids
+    if not classes:
+        print("Avertissement : Le catalogue 'proba_objets' est vide. Aucun objet n'a pu être pioché.")
+        return None
 
-    if issubclass(pioche_classe, objet.Ressource):
-        if pioche_classe == objet.Pieces:
-            quantite = random.randint(1,10) # On donne entre 1 et 10 pieces
-        elif pioche_classe == objet.Des or pioche_classe == objet.Gemmes:
-            quantite = random.randint(1,3)  # On donne entre 1 et 3 dés/gemmes
-        else:
-            quantite = 1  # On donne 1 clés 
-            return pioche_classe(quantite=quantite)
+    pioche_classe = random.choices(classes, weights=poids, k=1)[0]  
     
     return pioche_classe() # Pour tous les autres objets
 
+#-------------------- Pioche aléatoire de l'endroit à creuser
+
+def pioche_butin_creuser():
+    """
+    Détermine le butin apres avoir creusé : 50% rien, 50% des objets consommbales
+    """
+
+    if random.random() < 0.5 :
+
+        consommable_classes = {
+            cls : weight
+            for cls, weight in proba_objets.items()
+            if inspect.isclass(cls) and issubclass(cls, objet.Consommable) # Vérifie que c'est une classe consommable
+        }
+
+        if not consommable_classes:
+            return None
+    
+        classes = list(consommable_classes.keys())
+        poids = list(consommable_classes.values())
+
+        pioche_classe = random.choices(classes, weights = poids, k=1)[0]
+        return pioche_classe()
+    
+    else :
+        return None

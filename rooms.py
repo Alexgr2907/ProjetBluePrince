@@ -20,7 +20,10 @@ class Room(ABC):
         # Portes "modèles" (indique ou il y a une porte)
         self.door_location = {'north': False, 'south': False, 'east': False, 'west': False}
         self.objects_in_room = [] # Objets qui seront dans la pièce
-        
+        self.dig_spot = False # Endroit à creuser
+        self.First_time = True # Drapeau 1er entrée
+
+
         # Statut des portes (-1 pas de porte, 0 pour ouverte, 1 une clé ou kit crochetage,2 que une clé)
         # sera utilisé par Dimitri pour dire si les portes sont vérouillé où non (logique de clés)
         # ex: {'north': 0, 'south': 1, 'east': -1 (pas de porte), 'west': 2}
@@ -127,7 +130,9 @@ class Room(ABC):
     # Sert à appliquer un effet à chaque entrée dans la salle
     def apply_every_entry_effect(self, player):
         """Applique un effet *à chaque fois* que le joueur entre."""
-        None
+        if self.dig_spot:
+            return "Vous remarquez un endroit dans la pièce qui semble parfait pour **creuser** (Touche C)!"
+        return None
 
 
     def generation_objet(self, taux_drop : float = 0.5):
@@ -533,11 +538,6 @@ class Chucky_Bedroom(Room):
 
 proba_objets = {
     # Ici 1 représente une rareté de 3 (légendaire) et 10 une rareté de 0 (commun), plus le poids est élevé plus l'objets a de chance d'être pioché
-    # Ressource
-    objet.Pieces : 15,
-    objet.Gemmes : 5,
-    objet.Cles : 3,
-    objet.Des : 8,
 
     # Nourriture 
     objet.Pomme : 12,

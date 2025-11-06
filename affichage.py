@@ -355,6 +355,7 @@ index_confirmation = 0
 # Variables pour les messages feedback 
 message_feedback = ""
 temps_message_feedback = 0
+message_queue = []
 
 # --- BOUCLE DE JEU PRINCIPALE ---
 while en_cours:
@@ -385,6 +386,14 @@ while en_cours:
 
     # Gestion des événements
     for event in pygame.event.get():
+
+        #---- GESTION FILE D'ATTENTE MESSAGE--------
+        current_time = pygame.time.get_ticks()
+
+        if current_time > temps_message_feedback and message_queue:
+            message_feedback = message_queue.pop(0)
+            temps_message_feedback = current_time + 3000
+
         if event.type == pygame.QUIT:
             en_cours = False
         
@@ -419,6 +428,29 @@ while en_cours:
                     index_categorie_inv = 0 
                     sous_etat_inv = "navigation"
                     continue 
+                
+                # Logique pour creuser (C)
+                if event.key == pygame.K_c: 
+                    current_room = grille_manoir[player_y][player_x] # la piece actuelle
+                    if current_room and current_room.dig_spot:
+                        if inventaire_joueur.pelle:
+                            butin = rooms_manager.pioche_butin_creuser()
+                            current_room.dig_spot = False
+
+                            if butin :
+                                inventaire_joueur.ramasser_objet(butin)
+                                message_feedback = f"Vous creusez et trouvez un **{butin.nom}**!"
+                            else :
+                                message_feedback = "Vous n'avez rien trouver"
+
+                            temps_message_feedback = pygame.time.get_ticks() + 3000
+                        
+                        else :
+                            message_feedback = "Il ya un endroit à creuser, mais il vous manque une **Pelle** ! "
+                            temps_message_feedback = pygame.time.get_ticks() + 3000
+                    
+                    continue
+
 
                 # Logique de SÉLECTION (ZQSD)
                 if event.key == pygame.K_z: 
@@ -485,11 +517,15 @@ while en_cours:
                                 player_y = target_y
                                 inventaire_joueur.pas -= 1
 
-                                # Passe l'inventaire réel à la méthode
+                                # Récupération des messages
                                 msg = target_cell.apply_every_entry_effect(inventaire_joueur) 
+
                                 if msg: # Si la méthode retourne un message, on l'affiche
-                                    message_feedback = msg
-                                    temps_message_feedback = pygame.time.get_ticks() + 3000
+                                    message_queue.append(msg)
+
+                                    if not message_feedback: 
+                                        message_feedback = message_queue.pop(0)
+                                        temps_message_feedback = pygame.time.get_ticks() + 3000
 
                                 selected_direction = None
                                 target_x = player_x
@@ -520,25 +556,45 @@ while en_cours:
                         inventaire_joueur.gemmes -= chosen_room.gem_cost
                         chosen_room.rotation = chosen_room.valid_rotations[0]
                         grille_manoir[target_y][target_x] = chosen_room
-                        
-                        objet_rammase = rooms_manager.pioche_aleatoire_objet(taux_drop=0.1)
-                        if objet_rammase:
-                            chosen_room.objects_in_room.append(objet_rammase)
-                            print(f"Un {objet_rammase.nom} a été placé dans la {chosen_room}. ")
-                            message_feedback = f"Un {objet_rammase.nom} est apparu dans la nouvelle salle !"
-                            temps_message_feedback = pygame.time.get_ticks() + 3000
 
+                        room_entry_messages = []
+                        
+                        # Pioche objet
+                        if chosen_room.First_time:
+                            # Marque un endroit à creuser
+                            if random.random() < 1.0 :  # A faire varier idéalement à 0.2
+                                chosen_room.dig_spot = True
+                                print(f"Un endroit à creuser a été marqué dans la {chosen_room.name}.")
+
+                            # Tente de piocher un objet aléatoire
+                            objet_rammase = rooms_manager.pioche_aleatoire_objet(taux_drop=1.0)
+                            if objet_rammase:
+                                if inventaire_joueur.ramasser_objet(objet_rammase):
+                                    print(f"Un {objet_rammase.nom} a été ramassé et ajouté à l'inventaire. ")
+                                    room_entry_messages.append(f"Un {objet_rammase.nom} est apparu et a été ramassé !")
+                                    temps_message_feedback = pygame.time.get_ticks() + 3000
+
+                        # Passe l'inventaire réel et capture un éventuel message
+                        msg_entry = chosen_room.apply_entry_effect(inventaire_joueur)
+                        if msg_entry :
+                            room_entry_messages.append(msg_entry)
+
+                        msg_every= chosen_room.apply_entry_effect(inventaire_joueur)
+                        if msg_every:
+                            room_entry_messages.append(msg_every)
+
+                        if room_entry_messages :
+                            message_feedback = room_entry_messages.pop(0)
+                            temps_message_feedback = pygame.time.get_ticks() + 3000
+                            message_queue.extend(room_entry_messages)
+                        
                         if chosen_room in pioche_principale:
                             pioche_principale.remove(chosen_room)
                         
                         player_x = target_x
                         player_y = target_y
                         inventaire_joueur.pas -= 1
-                        # Passe l'inventaire réel et capture un éventuel message
-                        msg = chosen_room.apply_entry_effect(inventaire_joueur) 
-                        if msg:
-                            message_feedback = msg
-                            temps_message_feedback = pygame.time.get_ticks() + 3000
+                        
                         etat_du_jeu = "deplacement"
                         selection_salle_actuelle = []
                         selected_direction = None
@@ -624,6 +680,9 @@ while en_cours:
                 elif sous_etat_inv == "affichage_info":
                     if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
                         sous_etat_inv = "menu_contextuel" 
+                
+
+
 
 
     # Logique de fin de partie (défaite)
