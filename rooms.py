@@ -238,8 +238,7 @@ class Joker_Office(Room):
                 self.First_time = False 
                 return " Pas de chance! Vous perdez 10 pièces" 
             
-            # Retourne un message pour l'afficher à l'écran
-            return "Vous trouvez 50 pièces d'or !" 
+
         return None # Ne fait rien les fois suivantes
 
 
