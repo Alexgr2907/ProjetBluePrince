@@ -107,11 +107,11 @@ class Inventaire:
         if nom_objet in self.objets and self.objets[nom_objet] > 0:
             # On crée un catalogue qui stocke les classes des objets consommables
             catalogue = {
-                "Pomme": objet.Pomme,
-                "Banane": objet.Banane,
-                "Gâteau": objet.Gateau,
-                "Sandwich": objet.Sandwich,
-                "Repas": objet.Repas
+                "Oeuf d'araignée": objet.Pomme,
+                "Araignée": objet.Banane,
+                "Punaise": objet.Gateau,
+                "Coléoptère adulte": objet.Sandwich,
+                "Nid de sauterelle": objet.Repas
             }
     
             if nom_objet in catalogue:
