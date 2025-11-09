@@ -37,27 +37,27 @@ class Nourriture(Consommable):
 #---------- CLASSE FILLE DE NOURRITURE : POMME ----------#
 class Pomme(Nourriture):
     def __init__(self):
-        super().__init__("Pomme", pas_rendus=2, rarete=0)
+        super().__init__("Oeuf d'araignée", pas_rendus=2, rarete=0)
 
 #---------- CLASSE FILLE DE NOURRITURE : BANANE ----------#
 class Banane(Nourriture):
     def __init__(self):
-        super().__init__("Banane", pas_rendus=3, rarete=0)
+        super().__init__("Araignée", pas_rendus=3, rarete=0)
 
 #---------- CLASSE FILLE DE NOURRITURE : GÂTEAU ----------#
 class Gateau(Nourriture):
     def __init__(self):
-        super().__init__("Gâteau", pas_rendus=10, rarete=1)
+        super().__init__("Punaise", pas_rendus=10, rarete=1)
 
 #---------- CLASSE FILLE DE NOURRITURE : SANDWICH ----------#
 class Sandwich(Nourriture):
     def __init__(self):
-        super().__init__("Sandwich", pas_rendus=15, rarete=2)
+        super().__init__("Coléoptère adulte", pas_rendus=15, rarete=2)
 
 #---------- CLASSE FILLE DE NOURRITURE : REPAS ----------#
 class Repas(Nourriture):
     def __init__(self):
-        super().__init__("Repas", pas_rendus=25, rarete=3)
+        super().__init__("Nid de sauterelle", pas_rendus=25, rarete=3)
 
 
 #---------- CLASSE FILLE DE CONSOMMABLE : RESSOURCE ----------#
@@ -140,6 +140,6 @@ class DetecteurMetaux(Permanent):
         super().__init__("Détecteur de Métaux", "Augmente la chance de trouver des clés et des pièces.", rarete=3)
 
 #---------- CLASSE FILLE DE PERMANENT: PATE DE LAPIN  ----------#
-class PatteLapin(Permanent):
+class PatteLapin(Permanent):    
     def __init__(self):
         super().__init__("Patte de Lapin", "Augmente la chance de trouver des objets.", rarete=3)
