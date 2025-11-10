@@ -517,7 +517,7 @@ while en_cours:
                                 player_y = target_y
                                 inventaire_joueur.pas -= 1
 
-                                msg = target_cell.apply_every_entry_effect(inventaire_joueur) 
+                                msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir) 
 
                                 if msg: 
                                     message_queue.append(msg)
@@ -570,11 +570,11 @@ while en_cours:
                                     room_entry_messages.append(f"Un {objet_rammase.nom} est apparu et a été ramassé !")
                                     temps_message_feedback = pygame.time.get_ticks() + 3000
 
-                        msg_entry = chosen_room.apply_entry_effect(inventaire_joueur)
+                        msg_entry = chosen_room.apply_entry_effect(inventaire_joueur, grille_manoir)
                         if msg_entry :
                             room_entry_messages.append(msg_entry)
 
-                        msg_every= chosen_room.apply_every_entry_effect(inventaire_joueur)
+                        msg_every= chosen_room.apply_every_entry_effect(inventaire_joueur, grille_manoir)
                         if msg_every:
                             room_entry_messages.append(msg_every)
 
