@@ -126,9 +126,10 @@ def create_initial_deck():
     return deck
 
 
-def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y):
+def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y, reroll=False):
     """
     Pioche 3 pièces en respectant la rareté et la contrainte de gemmes.
+    reroll = True indique que l'appel proveint d'un retirage avec un dé
     """
     if not deck:
         return [] # Pioche vide

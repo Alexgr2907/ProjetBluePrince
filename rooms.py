@@ -13,9 +13,18 @@ import inventaire
 proba_objets = {
     # Ici 1 représente une rareté de 3 (légendaire) et 10 une rareté de 0 (commun), plus le poids est élevé plus l'objets a de chance d'être pioché
     # Nourriture 
-    objet.Pomme : 12, objet.Banane : 10, objet.Gateau : 8, objet.Sandwich : 5, objet.Repas : 3,
+    objet.Pomme : 12, 
+    objet.Banane : 10, 
+    objet.Gateau : 8, 
+    objet.Sandwich : 5, 
+    objet.Repas : 3,
+
     # Permanent
-    objet.DetecteurMetaux :1,objet.KitCrochetage :1,objet.Marteau :1,objet.PatteLapin:1,objet.Pelle :1
+    objet.DetecteurMetaux :1,
+    objet.KitCrochetage :1,
+    objet.Marteau :1,
+    objet.PatteLapin:1,
+    objet.Pelle :1
 }
 
 
@@ -142,7 +151,7 @@ class Room(ABC):
     def apply_every_entry_effect(self, player, grid):
         """Applique un effet *à chaque fois* que le joueur entre."""
         if self.dig_spot:
-            return "Vous remarquez un endroit dans la pièce qui semble parfait pour **creuser** (Touche C)!"
+            return "Vous remarquez un endroit dans la pièce qui semble parfait pour creuser (Touche C)!"
         return None
 
 
@@ -484,9 +493,9 @@ class Haunted_Gym(Room):
         return None
     
     def apply_every_entry_effect(self, player, grid):
-
-        player.pas -= 2
-        return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
+        return None
+        #player.pas -= 2
+        #return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
 
 
 class Loot_Stash(Room):
