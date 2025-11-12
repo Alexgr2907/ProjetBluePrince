@@ -80,7 +80,7 @@ ITEM_CATALOG = {
 
 # MODIFIÉ: Tailles dynamiques pour le menu de sélection
 CARD_IMAGE_SIZE = int(GRID_SIZE * 2.5) 
-CARD_PADDING = int(GRID_SIZE * 0.75)     
+CARD_PADDING = int(GRID_SIZE * 0.5)     
 
 # --- Fonctions d'Affichage ---
 
@@ -583,10 +583,18 @@ while en_cours:
                         if msg_every:
                             room_entry_messages.append(msg_every)
 
-                        if room_entry_messages :
-                            message_feedback = room_entry_messages.pop(0)
-                            temps_message_feedback = pygame.time.get_ticks() + 3000
-                            message_queue.extend(room_entry_messages)
+                        # --- NOUVELLE GESTION DES MESSAGES (simultané) ---
+                        if room_entry_messages:
+                            # 1. Joindre tous les messages en une seule chaîne
+                            combined_message = " ".join(room_entry_messages) 
+                            
+                            # 2. Afficher ce message combiné
+                            message_feedback = combined_message
+                            
+                            # 3. On augmente un peu le temps d'affichage
+                            temps_message_feedback = pygame.time.get_ticks() + 4000 
+                            
+                            # 4. On n'utilise PAS la message_queue ici
                         
                         if chosen_room in pioche_principale:
                             pioche_principale.remove(chosen_room)
@@ -704,7 +712,7 @@ while en_cours:
 
 
     # --- AFFICHAGE ---
-    screen.fill(BLACK) 
+    screen.fill(UI_BLUE_DARK) 
 
     # --- DESSIN DE LA BARRE LATERALE (HUD) ---
     sidebar_rect = pygame.Rect(0, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT)
@@ -822,23 +830,27 @@ while en_cours:
         target_cursor = pygame.Rect(target_pixel_x, target_pixel_y, GRID_SIZE, GRID_SIZE)
         pygame.draw.rect(screen, SELECTION_COLOR, target_cursor, 2) 
 
-    # --- CORRECTION: AFFICHER LE MESSAGE FEEDBACK ---
+        # --- NOUVEL AFFICHAGE MESSAGE FEEDBACK (en bas à gauche) ---
     if message_feedback and pygame.time.get_ticks() < temps_message_feedback:
-        # Crée un rectangle AU-DESSUS de la grille pour le texte
-        message_box_width = grid_total_width
-        message_box_height = int(GRID_SIZE * 1.2) 
-        message_rect_x = start_x
-        message_rect_y = start_y - message_box_height - int(GRID_SIZE * 0.1) 
         
-        if message_rect_y < 10:
-            message_rect_y = 10
+        # 1. Définir la zone du message (en bas de la sidebar)
+        padding_x = 20 # Marge intérieure gauche/droite
+        padding_y = 20 # Marge intérieure basse
+        message_box_width = SIDEBAR_WIDTH - (padding_x * 2) # Largeur de la sidebar moins les marges
+        message_box_height = int(GRID_SIZE * 2) # Assez de place pour ~3 lignes
+        message_rect_x = padding_x
+        message_rect_y = SCREEN_HEIGHT - message_box_height - padding_y # Ancré en bas
         
         message_rect = pygame.Rect(message_rect_x, message_rect_y, message_box_width, message_box_height)
         
-        dessiner_texte_multi_lignes(screen, message_feedback, MENU_CARD_FONT, RED, message_rect)
+        # 2. Dessiner le texte 
+        # On utilise INV_ITEM_FONT (plus grand que MENU_CARD_FONT)
+        # On utilise UI_HIGHLIGHT (rouge) pour une meilleure visibilité
+        dessiner_texte_multi_lignes(screen, message_feedback, INV_ITEM_FONT, RED, message_rect)
         
     elif pygame.time.get_ticks() >= temps_message_feedback:
-        message_feedback = "" 
+        message_feedback = "" # Efface le message
+    # --- FIN NOUVEL AFFICHAGE ---
 
     # --- CORRECTION: DESSINER LE MENU DE SÉLECTION DE PIÈCE ---
     if etat_du_jeu == "selection_salle":
@@ -850,20 +862,31 @@ while en_cours:
         x_pos_center = right_area_x_start + (right_area_width // 2)
         
         num_cards = len(selection_salle_actuelle)
-        
-        total_cards_height = (num_cards * CARD_IMAGE_SIZE) + ((num_cards - 1) * CARD_PADDING)
-        
-        # MODIFIÉ: Centre le bloc de cartes verticalement sur l'ÉCRAN
-        start_menu_y = (SCREEN_HEIGHT - total_cards_height) // 2
-        
         keys_to_show = ['Q', 'S', 'D']
+
+        # --- NOUVEAUX CALCULS DE HAUTEUR ---
+        # Définir des espacements dynamiques basés sur la taille de la police
+        text_padding_top = int(GRID_SIZE * 0.2)  # Espace entre image et nom (equiv. à 30)
+        text_padding_bottom = int(GRID_SIZE * 0.4) # Espace entre nom et gemme (equiv. à 55)
+        key_height_offset = int(GRID_SIZE * 0.5) # Espace pour la touche 'Q' au-dessus
         
+        # Calcule la hauteur totale
+        total_cards_height = (num_cards * CARD_IMAGE_SIZE) + ((num_cards - 1) * CARD_PADDING)
+        total_display_height = key_height_offset + total_cards_height + text_padding_bottom + int(GRID_SIZE * 0.3) # Ajoute l'espace pour la touche 'Q' et le dernier texte
+        
+        # Centre le bloc verticalement
+        start_menu_y = (SCREEN_HEIGHT - total_display_height) // 2
+        
+        # --- FIN NOUVEAUX CALCULS ---
+
         for i, room in enumerate(selection_salle_actuelle):
-            y_pos = start_menu_y + i * (CARD_IMAGE_SIZE + CARD_PADDING) 
+            # Calcule le Y de cette carte
+            y_pos = start_menu_y + key_height_offset + i * (CARD_IMAGE_SIZE + CARD_PADDING) 
             
             display_rotation = 0
             if room.valid_rotations: display_rotation = room.valid_rotations[0]
             
+            # 1. DESSINER L'IMAGE
             if room.image:
                 img = pygame.transform.scale(room.image, (CARD_IMAGE_SIZE, CARD_IMAGE_SIZE))
                 rotated_img = pygame.transform.rotate(img, display_rotation * 90)
@@ -874,18 +897,21 @@ while en_cours:
                 fallback_rect.center = (x_pos_center, y_pos + CARD_IMAGE_SIZE // 2)
                 pygame.draw.rect(screen, GRAY, fallback_rect)
 
+            # 2. DESSINER LE TEXTE (avec offsets dynamiques)
             name_text = MENU_CARD_FONT.render(room.name, True, WHITE)
-            name_rect = name_text.get_rect(center=(x_pos_center, y_pos + CARD_IMAGE_SIZE + 30))
+            name_rect = name_text.get_rect(center=(x_pos_center, y_pos + CARD_IMAGE_SIZE + text_padding_top))
             screen.blit(name_text, name_rect)
 
             gem_color = WHITE if inventaire_joueur.gemmes >= room.gem_cost else RED
             gem_text_str = f"Coût: {room.gem_cost} Gemmes"
             gem_text = MENU_CARD_FONT.render(gem_text_str, True, gem_color)
-            gem_rect = gem_text.get_rect(center=(x_pos_center, y_pos + CARD_IMAGE_SIZE + 55))
+            gem_rect = gem_text.get_rect(center=(x_pos_center, y_pos + CARD_IMAGE_SIZE + text_padding_bottom))
             screen.blit(gem_text, gem_rect)
 
+            # 3. DESSINER LA TOUCHE (Q, S, D)
             if i < len(keys_to_show):
                 key_text = MENU_KEY_FONT.render(keys_to_show[i], True, BLACK)
+                # Positionnée à gauche de l'image
                 key_bg_rect = key_text.get_rect(center=(x_pos_center - (CARD_IMAGE_SIZE // 2) - (GRID_SIZE * 0.5), y_pos + CARD_IMAGE_SIZE // 2)) 
                 key_bg_rect.inflate_ip(10, 10) 
                 pygame.draw.rect(screen, WHITE, key_bg_rect, border_radius=5)
