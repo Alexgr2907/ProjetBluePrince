@@ -329,6 +329,7 @@ grille_manoir[player_y][player_x] = salle_depart
 
 # Modif Alex Salle de fin (exit)
 salle_final = Exit()
+grille_manoir[0][2] = salle_final
 
 # Sélection de la cible
 target_x = player_x
@@ -517,6 +518,10 @@ while en_cours:
                                 player_y = target_y
                                 inventaire_joueur.pas -= 1
 
+                                if target_cell is salle_final:
+                                    etat_du_jeu = "gagne"
+                                    continue # On saute le reste de la boucle
+
                                 msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir) 
 
                                 if msg: 
@@ -682,6 +687,21 @@ while en_cours:
         pygame.time.wait(3000)
         en_cours = False
         continue 
+    # logique fin du jeu : victoire   
+    if etat_du_jeu == "gagne":
+
+        screen.fill(UI_BLUE_DARK) # Fond noir
+
+        # On utilise une police de titre pour le message
+        win_text = MENU_TITLE_FONT.render("Vous avez réussi à vous échapper !", True, WHITE)
+        win_rect = win_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        screen.blit(win_text, win_rect)
+
+        pygame.display.flip()
+        pygame.time.wait(5000) # Attend 3 secondes
+        en_cours = False # Arrête le jeu
+        continue # Saute le reste de l'affichage
+
 
     # --- AFFICHAGE ---
     screen.fill(BLACK) 
