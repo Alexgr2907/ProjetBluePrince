@@ -220,3 +220,64 @@ def pioche_butin_creuser():
     
     else :
         return None
+    
+
+def determine_lock_level(row_index):
+    """
+    Détermine le niveau de verrouillage (0, 1, ou 2) en fonction de la rangée.
+    """
+    # row_index 0 est le HAUT (fin), row_index 8 est le BAS (début)
+    
+    # Première rangée (où on commence, y=8) : toujours niveau 0
+    if row_index == MANOR_HEIGHT - 1: # 8
+        return 0
+    
+    # Dernière rangée (Antichambre, y=0) : toujours niveau 2
+    if row_index == 0:
+        return 2
+    
+    # --- Rangs intermédiaires ---
+    # Convertit la rangée (7 -> 1) en "progrès" (0.125 -> 0.875)
+    # Plus on est haut (proche de 0), plus 'progress' est proche de 1.0
+    progress = 1.0 - (row_index / (MANOR_HEIGHT - 1))
+    
+    rand_val = random.random()
+    
+    # Plus on progresse, plus la proba de Niv 2 est haute (max 30%)
+    if rand_val < (progress * 0.2):
+        return 2
+    # Plus on progresse, plus la proba de Niv 1 est haute (max 50%)
+    elif rand_val < (progress * 0.4):
+        return 1
+    else:
+        return 0
+
+def set_door_statuses(room, grid, x, y, previous_x, previous_y):
+    """
+    Initialise le dictionnaire 'doors_statut' pour une nouvelle pièce
+    en se basant sur ses portes tournées, ses voisins et la rangée.
+    """
+    rotated_doors = room.get_rotated_doors()
+    
+    for direction, has_door in rotated_doors.items():
+        if not has_door:
+            room.doors_statut[direction] = -1 # Pas de porte
+            continue
+
+        # Vérifier les voisins pour assurer la cohérence
+        if direction == 'north' and y > 0 and grid[y-1][x] is not None:
+            room.doors_statut['north'] = grid[y-1][x].doors_statut['south']
+        elif direction == 'south' and y < MANOR_HEIGHT - 1 and grid[y+1][x] is not None:
+            room.doors_statut['south'] = grid[y+1][x].doors_statut['north']
+        elif direction == 'west' and x > 0 and grid[y][x-1] is not None:
+            room.doors_statut['west'] = grid[y][x-1].doors_statut['east']
+        elif direction == 'east' and x < MANOR_WIDTH - 1 and grid[y][x+1] is not None:
+            room.doors_statut['east'] = grid[y][x+1].doors_statut['west']
+        else:
+            # C'est une nouvelle porte qui mène au vide. On détermine son verrouillage.
+            room.doors_statut[direction] = determine_lock_level(y)
+            
+    # La porte par laquelle on vient d'entrer est toujours déverrouillée (coût payé)
+    entry_dir = get_entry_direction(previous_x, previous_y, x, y)
+    if entry_dir:
+        room.doors_statut[entry_dir] = 0

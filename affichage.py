@@ -324,13 +324,17 @@ player_x = 2
 player_y = 8
 
 # Place la salle de départ 
-salle_depart = Horror_Hall() 
-grille_manoir[player_y][player_x] = salle_depart 
+salle_depart = Horror_Hall()
+grille_manoir[player_y][player_x] = salle_depart
+rooms_manager.set_door_statuses(salle_depart, grille_manoir, player_x, player_y, player_x, player_y)
 
 # Modif Alex Salle de fin (exit)
 salle_final = Exit()
 grille_manoir[0][2] = salle_final
+rooms_manager.set_door_statuses(salle_final, grille_manoir, 2, 0, 2, 0)
 
+# Sélection de la cible
+target_x = player_x
 # Sélection de la cible
 target_x = player_x
 target_y = player_y
@@ -348,7 +352,7 @@ pioche_principale = create_initial_deck()
 
 # GESTION D'ÉTAT 
 en_cours = True
-etat_du_jeu = "deplacement" 
+etat_du_jeu = "deplacement" # "deplacement", "selection_salle", "inventaire", "shopping_locksmith", "gagne", "confirmation_porte"
 selection_salle_actuelle = [] 
 
 # Variables pour l'état de l'inventaire
@@ -363,6 +367,8 @@ index_confirmation = 0
 message_feedback = ""
 temps_message_feedback = 0
 message_queue = []
+
+détail_ouverture_porte = {} # Pour stocker les détails de l'ouverture de porte
 
 # --- BOUCLE DE JEU PRINCIPALE ---
 while en_cours:
@@ -474,72 +480,120 @@ while en_cours:
                     target_x = min(MANOR_WIDTH - 1, player_x + 1)
                     target_y = player_y
                 
+
+                # Logique de VALIDATION (Espace / Entrée)
                 elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     if selected_direction is not None and (target_x != player_x or target_y != player_y):
                         
+                        # 1. Vérifier si un PASSAGE existe
                         current_room = grille_manoir[player_y][player_x]
                         current_doors = current_room.get_rotated_doors()
                         
                         has_exit = False
-                        if selected_direction == 'up' and current_doors['north']: has_exit = True
-                        elif selected_direction == 'down' and current_doors['south']: has_exit = True
-                        elif selected_direction == 'left' and current_doors['west']: has_exit = True
-                        elif selected_direction == 'right' and current_doors['east']: has_exit = True
+                        direction_str = ""
+                        if selected_direction == 'up' and current_doors['north']: 
+                            has_exit = True; direction_str = 'north'
+                        elif selected_direction == 'down' and current_doors['south']: 
+                            has_exit = True; direction_str = 'south'
+                        elif selected_direction == 'left' and current_doors['west']: 
+                            has_exit = True; direction_str = 'west'
+                        elif selected_direction == 'right' and current_doors['east']: 
+                            has_exit = True; direction_str = 'east'
 
                         if not has_exit:
                             message_feedback = "Il n'y a pas d'accès de ce côté"
                             temps_message_feedback = pygame.time.get_ticks() + 2000
-                            selected_direction = None 
-                            target_x = player_x
-                            target_y = player_y
-                            continue 
+                            selected_direction = None; target_x = player_x; target_y = player_y
+                            continue
+                        
+                        # 2. Le passage existe. Est-il VERROUILLÉ ?
+                        lock_level = current_room.doors_statut.get(direction_str, 0)
+                        
+                        if lock_level == 0:
+                            # Porte de niveau 0 (ouverte) : On continue comme avant
+                            pass # Le code après cette section s'exécutera
+                        
+                        elif lock_level == 1:
+                            if inventaire_joueur.kit_crochetage:
+                                # Le joueur a le kit, on demande confirmation
+                                détail_ouverture_porte = {
+                                    'target_x': target_x, 'target_y': target_y,
+                                    'direction_str': direction_str, 'lock_level': lock_level,
+                                    'key_cost': 0, 'used_kit': True
+                                }
+                                etat_du_jeu = "confirmation_porte"
+                                continue # On arrête ici, on attend la confirmation
+                            elif inventaire_joueur.cles >= 1:
+                                # Le joueur a une clé, on demande confirmation
+                                détail_ouverture_porte = {
+                                    'target_x': target_x, 'target_y': target_y,
+                                    'direction_str': direction_str, 'lock_level': lock_level,
+                                    'key_cost': 1, 'used_kit': False
+                                }
+                                etat_du_jeu = "confirmation_porte"
+                                continue # On arrête ici, on attend la confirmation
+                            else:
+                                message_feedback = "Porte verrouillée (Niv 1). Il faut 1 clé."
+                                temps_message_feedback = pygame.time.get_ticks() + 2000
+                                selected_direction = None; target_x = player_x; target_y = player_y
+                                continue # Bloqué
+
+                        elif lock_level == 2:
+                            if inventaire_joueur.cles >= 1:
+                                # Le joueur a une clé, on demande confirmation
+                                détail_ouverture_porte = {
+                                    'target_x': target_x, 'target_y': target_y,
+                                    'direction_str': direction_str, 'lock_level': lock_level,
+                                    'key_cost': 1, 'used_kit': False
+                                }
+                                etat_du_jeu = "confirmation_porte"
+                                continue # On arrête ici, on attend la confirmation
+                            else:
+                                message_feedback = "Porte verrouillée (Niv 2). Il faut 1 clé."
+                                temps_message_feedback = pygame.time.get_ticks() + 2000
+                                selected_direction = None; target_x = player_x; target_y = player_y
+                                continue # Bloqué
+                        
+                    
+                        # 3. La porte est de NIVEAU 0 (ou on continue depuis le bloc confirmation)
+                        #    On continue vers la case cible.
                         
                         target_cell = grille_manoir[target_y][target_x]
                         
-                        if target_cell is None: 
+                        # CAS 1: CASE VIDE (NOUVELLE PIÈCE) 
+                        if target_cell is None:
                             selection_salle_actuelle = draw_three_rooms(pioche_principale, inventaire_joueur.gemmes, grille_manoir, target_x, target_y, player_x, player_y)
                             if selection_salle_actuelle: 
                                 etat_du_jeu = "selection_salle"
+                                for room in selection_salle_actuelle:
+                                    room.previous_room_x = player_x
+                                    room.previous_room_y = player_y
                             else:
                                 message_feedback = "Aucune pièce ne peut aller ici !"
                                 temps_message_feedback = pygame.time.get_ticks() + 2000
                                 selected_direction = None
                         
+                        # CAS 2: CASE DÉJÀ DÉCOUVERTE 
                         else:
-                            target_doors = target_cell.get_rotated_doors()
-                            has_entry = False
-                            if selected_direction == 'up' and target_doors['south']: has_entry = True
-                            elif selected_direction == 'down' and target_doors['north']: has_entry = True
-                            elif selected_direction == 'left' and target_doors['east']: has_entry = True
-                            elif selected_direction == 'right' and target_doors['west']: has_entry = True
+                            player_x = target_x
+                            player_y = target_y
+                            inventaire_joueur.pas -= 1
 
-                            if has_entry:
-                                player_x = target_x
-                                player_y = target_y
-                                inventaire_joueur.pas -= 1
+                            if target_cell is salle_final:
+                                etat_du_jeu = "gagne"
+                                continue 
 
-                                if target_cell is salle_final:
-                                    etat_du_jeu = "gagne"
-                                    continue # On saute le reste de la boucle
+                            msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir) 
 
-                                msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir) 
+                            if msg: 
+                                message_queue.append(msg)
+                                if not message_feedback:
+                                    message_feedback = message_queue.pop(0)
+                                    temps_message_feedback = pygame.time.get_ticks() + 3000
 
-                                if msg: 
-                                    message_queue.append(msg)
-
-                                    if not message_feedback: 
-                                        message_feedback = message_queue.pop(0)
-                                        temps_message_feedback = pygame.time.get_ticks() + 3000
-
-                                selected_direction = None
-                                target_x = player_x
-                                target_y = player_y
-                            else:
-                                message_feedback = "Il n'y a pas d'accès de ce côté"
-                                temps_message_feedback = pygame.time.get_ticks() + 2000
-                                selected_direction = None
-                                target_x = player_x
-                                target_y = player_y
+                            selected_direction = None
+                            target_x = player_x
+                            target_y = player_y
 
                 elif event.key not in [pygame.K_z, pygame.K_s, pygame.K_q, pygame.K_d, pygame.K_SPACE, pygame.K_RETURN, pygame.K_ESCAPE, pygame.K_i, pygame.K_c]:
                     selected_direction = None
@@ -560,7 +614,9 @@ while en_cours:
                         inventaire_joueur.gemmes -= chosen_room.gem_cost
                         chosen_room.rotation = chosen_room.valid_rotations[0]
                         grille_manoir[target_y][target_x] = chosen_room
-
+                        
+                        # statut des portes pour les clés
+                        rooms_manager.set_door_statuses(chosen_room, grille_manoir, target_x, target_y, player_x, player_y)
                         room_entry_messages = []
                         
                         if chosen_room.First_time:
@@ -683,6 +739,85 @@ while en_cours:
                 elif sous_etat_inv == "affichage_info":
                     if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
                         sous_etat_inv = "menu_contextuel" 
+            
+            # ÉTAT 5: LE JOUEUR CONFIRME L'OUVERTURE D'UNE PORTE
+            elif etat_du_jeu == "confirmation_porte":
+                
+                # --- Le joueur dit NON ---
+                if event.key == pygame.K_n:
+                    etat_du_jeu = "deplacement"
+                    détail_ouverture_porte = {}
+                    selected_direction = None # Annule la sélection
+                    target_x = player_x
+                    target_y = player_y
+                    continue
+                
+                # --- Le joueur dit OUI ---
+                if event.key == pygame.K_o:
+                    # 1. Récupérer les détails de l'action
+                    details = détail_ouverture_porte
+                    target_x = details['target_x']
+                    target_y = details['target_y']
+                    
+                    # 2. Payer le coût et déverrouiller
+                    if details['key_cost'] > 0:
+                        inventaire_joueur.depenser_cles(details['key_cost'])
+                        message_feedback = f"Porte déverrouillée avec {details['key_cost']} clé."
+                        temps_message_feedback = pygame.time.get_ticks() + 2000
+                    elif details['used_kit']:
+                        message_feedback = "Porte crochetée avec le Kit !"
+                        temps_message_feedback = pygame.time.get_ticks() + 2000
+                    
+                    # 3. Déverrouiller la porte (des deux côtés)
+                    current_room = grille_manoir[player_y][player_x]
+                    current_room.doors_statut[details['direction_str']] = 0 # Côté actuel
+                    
+                    target_cell_for_unlock = grille_manoir[target_y][target_x]
+                    if target_cell_for_unlock is not None:
+                        # Côté cible (s'il existe)
+                        if details['direction_str'] == 'up': target_cell_for_unlock.doors_statut['south'] = 0
+                        elif details['direction_str'] == 'down': target_cell_for_unlock.doors_statut['north'] = 0
+                        elif details['direction_str'] == 'left': target_cell_for_unlock.doors_statut['east'] = 0
+                        elif details['direction_str'] == 'right': target_cell_for_unlock.doors_statut['west'] = 0
+                    
+                    # 4. Continuer vers la case cible (logique copiée du K_SPACE)
+                    target_cell = grille_manoir[target_y][target_x]
+                    
+                    # CAS 1: CASE VIDE
+                    if target_cell is None:
+                        selection_salle_actuelle = draw_three_rooms(pioche_principale, inventaire_joueur.gemmes, grille_manoir, target_x, target_y, player_x, player_y)
+                        if selection_salle_actuelle: 
+                            etat_du_jeu = "selection_salle"
+                            for room in selection_salle_actuelle:
+                                room.previous_room_x = player_x
+                                room.previous_room_y = player_y
+                        else:
+                            message_feedback = "Aucune pièce ne peut aller ici !"
+                            temps_message_feedback = pygame.time.get_ticks() + 2000
+                            etat_du_jeu = "deplacement" # Retour au déplacement
+                        
+                        # On réinitialise l'action d'ouverture
+                        détail_ouverture_porte = {}
+                        # On NE réinitialise PAS target_x/y ici, car "selection_salle" en a besoin
+
+                    # CAS 2: CASE DÉCOUVERTE
+                    else:
+                        player_x = target_x
+                        player_y = target_y
+                        inventaire_joueur.pas -= 1
+
+                        if target_cell is salle_final:
+                            etat_du_jeu = "gagne"
+                        else:
+                            msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir)
+                            if msg: message_queue.append(msg)
+                            etat_du_jeu = "deplacement" # Retour au déplacement
+
+                        # 5. Réinitialiser (SEULEMENT APRÈS UN DÉPLACEMENT)
+                        détail_ouverture_porte = {}
+                        selected_direction = None
+                        target_x = player_x
+                        target_y = player_y
                 
     # Logique de fin de partie (défaite)
     if inventaire_joueur.pas <= 0:
@@ -852,6 +987,39 @@ while en_cours:
         message_feedback = "" # Efface le message
     # --- FIN NOUVEL AFFICHAGE ---
 
+    # DESSINER LE MENU DE CONFIRMATION DE PORTE
+    if etat_du_jeu == "confirmation_porte":
+        # Fond semi-transparent
+        s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 200))
+        screen.blit(s, (0, 0))
+
+        # Boîte de dialogue
+        box_width = int(GRID_SIZE * 8)
+        box_height = int(GRID_SIZE * 3)
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+        
+        pygame.draw.rect(screen, UI_BLUE_DARK, box_rect, border_radius=10)
+        pygame.draw.rect(screen, WHITE, box_rect, width=3, border_radius=10)
+
+        # Message (dynamique selon kit ou clé)
+        details = détail_ouverture_porte
+        lock_level = details['lock_level']
+        
+        if details['used_kit']:
+            message_str = f"Porte verrouillée (Niv {lock_level}). Crocheter?"
+        else:
+            message_str = f"Porte verrouillée (Niv {lock_level}). Utiliser 1 Clé?"
+        
+        title_text = MENU_CARD_FONT.render(message_str, True, WHITE)
+        screen.blit(title_text, title_text.get_rect(center=(box_rect.centerx, box_rect.centery - (GRID_SIZE * 0.5))))
+
+        # Options
+        options_text = INV_ITEM_FONT.render("(O) Oui  /  (N) Non", True, UI_HIGHLIGHT)
+        screen.blit(options_text, options_text.get_rect(center=(box_rect.centerx, box_rect.centery + (GRID_SIZE * 0.5))))
+
     # --- CORRECTION: DESSINER LE MENU DE SÉLECTION DE PIÈCE ---
     if etat_du_jeu == "selection_salle":
         
@@ -916,6 +1084,7 @@ while en_cours:
                 key_bg_rect.inflate_ip(10, 10) 
                 pygame.draw.rect(screen, WHITE, key_bg_rect, border_radius=5)
                 screen.blit(key_text, key_text.get_rect(center=key_bg_rect.center))
+            
     
     # DESSINER L'INTERFACE DE L'INVENTAIRE (Plein écran 'I')
     if etat_du_jeu == "inventaire":
