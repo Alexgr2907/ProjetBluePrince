@@ -1029,7 +1029,7 @@ while en_cours:
         if any(keyword in message_to_check.lower() for keyword in keywords):
             feedback_color = WHITE
 
-        dessiner_texte_multi_lignes(screen, message_feedback, INV_ITEM_FONT, feedback_color, message_rect)
+        dessiner_texte_multi_lignes(screen, message_to_check, INV_ITEM_FONT, feedback_color, message_rect)
         
     elif pygame.time.get_ticks() >= temps_message_feedback:
         message_feedback = "" # Efface le message
