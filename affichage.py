@@ -367,6 +367,7 @@ index_confirmation = 0
 message_feedback = ""
 temps_message_feedback = 0
 message_queue = []
+MESSAGE_DURATION = 2000
 
 détail_ouverture_porte = {} # Pour stocker les détails de l'ouverture de porte
 
@@ -400,10 +401,22 @@ while en_cours:
 
         #---- GESTION FILE D'ATTENTE MESSAGE--------
         current_time = pygame.time.get_ticks()
-
-        if current_time > temps_message_feedback and message_queue:
-            message_feedback = message_queue.pop(0)
-            temps_message_feedback = current_time + 3000
+        
+        # Si le messsage est expiré et qu'il y a des messages en attente
+        if current_time >= temps_message_feedback and message_queue:  
+            new_message, duration = message_queue.pop(0)   # prend le porchain message dans la file d'attente
+            if isinstance(new_message, tuple):
+                # Si on a un tuple, on suposse que le 1er élément correspond au message
+                message_feedback = new_message[0]
+            else :
+                message_feedback = new_message
+            
+            temps_message_feedback = current_time + duration
+        
+        # Si le messsage est expiré et qu'il n'y a pas de message en attente
+        elif current_time >= temps_message_feedback and not message_queue:  
+            message_feedback = "" 
+            temps_message_feedback = 0
 
         if event.type == pygame.QUIT:
             en_cours = False
@@ -560,9 +573,10 @@ while en_cours:
                         
                         target_cell = grille_manoir[target_y][target_x]
                         
-                        # CAS 1: CASE VIDE (NOUVELLE PIÈCE) 
-                        if target_cell is None:
-                            selection_salle_actuelle = draw_three_rooms(pioche_principale, inventaire_joueur.gemmes, grille_manoir, target_x, target_y, player_x, player_y)
+
+                        if target_cell is None: 
+                            selection_salle_actuelle = draw_three_rooms(pioche_principale, inventaire_joueur.gemmes, grille_manoir, target_x, target_y, player_x, player_y, reroll=False)
+
                             if selection_salle_actuelle: 
                                 etat_du_jeu = "selection_salle"
                                 for room in selection_salle_actuelle:
@@ -591,9 +605,11 @@ while en_cours:
                                     message_feedback = message_queue.pop(0)
                                     temps_message_feedback = pygame.time.get_ticks() + 3000
 
+
                             selected_direction = None
                             target_x = player_x
                             target_y = player_y
+
 
                 elif event.key not in [pygame.K_z, pygame.K_s, pygame.K_q, pygame.K_d, pygame.K_SPACE, pygame.K_RETURN, pygame.K_ESCAPE, pygame.K_i, pygame.K_c]:
                     selected_direction = None
@@ -602,6 +618,22 @@ while en_cours:
             
             # ÉTAT 2: LE JOUEUR CHOISIT UNE PIÈCE
             elif etat_du_jeu == "selection_salle":
+                if event.key == pygame.K_x: # Touche X pour retirer avec dés
+                    if inventaire_joueur.depenser_des(1):
+                        selection_salle_actuelle = rooms_manager.draw_three_rooms(
+                            pioche_principale, 
+                            inventaire_joueur.gemmes, 
+                            grille_manoir, 
+                            target_x, 
+                            target_y, 
+                            player_x, 
+                            player_y, 
+                            reroll=True
+                        )
+                    else:
+                        message_feedback = "Vous n'avez pas de dé pour effectuer un nouveau tirage."
+                        temps_message_feedback = pygame.time.get_ticks() + 2000
+
                 choice = -1
                 if event.key == pygame.K_q: choice = 0
                 elif event.key == pygame.K_s: choice = 1
@@ -620,11 +652,11 @@ while en_cours:
                         room_entry_messages = []
                         
                         if chosen_room.First_time:
-                            if random.random() < 1.0 :  
+                            if random.random() < 0.33 :    #Valeur à ajuster
                                 chosen_room.dig_spot = True
                                 print(f"Un endroit à creuser a été marqué dans la {chosen_room.name}.")
 
-                            objet_rammase = rooms_manager.pioche_aleatoire_objet(taux_drop=1.0)
+                            objet_rammase = rooms_manager.pioche_aleatoire_objet(taux_drop=0.33)
                             if objet_rammase:
                                 if inventaire_joueur.ramasser_objet(objet_rammase):
                                     print(f"Un {objet_rammase.nom} a été ramassé et ajouté à l'inventaire. ")
@@ -641,16 +673,11 @@ while en_cours:
 
                         # --- NOUVELLE GESTION DES MESSAGES (simultané) ---
                         if room_entry_messages:
-                            # 1. Joindre tous les messages en une seule chaîne
-                            combined_message = " ".join(room_entry_messages) 
+                            for msg in room_entry_messages:
+                                # On ajoute chaque message individuellement à la file d'attente 
+                                message_queue.append((msg, MESSAGE_DURATION))
+                            room_entry_messages.clear()
                             
-                            # 2. Afficher ce message combiné
-                            message_feedback = combined_message
-                            
-                            # 3. On augmente un peu le temps d'affichage
-                            temps_message_feedback = pygame.time.get_ticks() + 4000 
-                            
-                            # 4. On n'utilise PAS la message_queue ici
                         
                         if chosen_room in pioche_principale:
                             pioche_principale.remove(chosen_room)
@@ -872,11 +899,12 @@ while en_cours:
         current_y += 30
     else:
         for item_name in liste_consommables:
-            quantity = inventaire_joueur.objets[item_name]
-            item_str = f"  - {item_name} x{quantity}"
-            item_text = HUD_ITEM_FONT.render(item_str, True, WHITE)
-            screen.blit(item_text, (30, current_y))
-            current_y += 30
+            if item_name in inventaire_joueur.objets:
+                quantity = inventaire_joueur.objets[item_name]
+                item_str = f"  - {item_name} x{quantity}"
+                item_text = HUD_ITEM_FONT.render(item_str, True, WHITE)
+                screen.blit(item_text, (30, current_y))
+                current_y += 30
     
     current_y += 20 
     
@@ -981,7 +1009,27 @@ while en_cours:
         # 2. Dessiner le texte 
         # On utilise INV_ITEM_FONT (plus grand que MENU_CARD_FONT)
         # On utilise UI_HIGHLIGHT (rouge) pour une meilleure visibilité
-        dessiner_texte_multi_lignes(screen, message_feedback, INV_ITEM_FONT, RED, message_rect)
+        # On réalise un affichage dynamique, lorsque l'on a un trou à creuser le message s'affiche en blanc
+
+
+        # On s'assure qu'on travaille avec un str pr éviter le crash lower()
+        if isinstance(message_feedback, str):
+            message_to_check = message_feedback
+        elif isinstance(message_feedback, tuple) and len(message_feedback) > 0:
+            # Si c'est un tuple, on prend le premier élément (qui doit être le texte)
+            message_to_check = str(message_feedback[0])
+        else:
+            message_to_check = ""
+
+        # 2. Dessiner le texte 
+        keywords = ["parfait"]
+        feedback_color = RED  # On laisse en rouge pour les messages spécifique à la piece
+        
+        # !!! POINT CRUCIAL : UTILISER message_to_check !!!
+        if any(keyword in message_to_check.lower() for keyword in keywords):
+            feedback_color = WHITE
+
+        dessiner_texte_multi_lignes(screen, message_feedback, INV_ITEM_FONT, feedback_color, message_rect)
         
     elif pygame.time.get_ticks() >= temps_message_feedback:
         message_feedback = "" # Efface le message
@@ -1084,8 +1132,19 @@ while en_cours:
                 key_bg_rect.inflate_ip(10, 10) 
                 pygame.draw.rect(screen, WHITE, key_bg_rect, border_radius=5)
                 screen.blit(key_text, key_text.get_rect(center=key_bg_rect.center))
+
+
+        if etat_du_jeu == "selection_salle" and inventaire_joueur.des > 0 :
+            message_reroll = "Appuyez sur X pour retirer 3 nouvelles pièces (Coût: 1 Dé)"
+            reroll_text = MENU_CARD_FONT.render(message_reroll, True, WHITE)
+            x_pos_left = GRID_SIZE * 0.5 # Marge depuis le bord gauche
+            y_pos_bottom = SCREEN_HEIGHT - 30 
+            # Aligne le texte sur le bord gauche (x_pos_left) et le bas (y_pos_bottom)
+            reroll_rect = reroll_text.get_rect(bottomleft=(x_pos_left, y_pos_bottom))
             
-    
+            # Dessin du message
+            screen.blit(reroll_text, reroll_rect)
+
     # DESSINER L'INTERFACE DE L'INVENTAIRE (Plein écran 'I')
     if etat_du_jeu == "inventaire":
         dessiner_interface_inventaire(screen, inventaire_joueur, 
