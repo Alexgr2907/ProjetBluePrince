@@ -596,7 +596,7 @@ def lancer_jeu():
                         current_room = grille_manoir[player_y][player_x] 
                         if current_room and current_room.dig_spot:
                             if inventaire_joueur.pelle:
-                                butin = rooms_manager.pioche_butin_creuser()
+                                butin = rooms_manager.pioche_butin_creuser(inventaire_joueur)
                                 current_room.dig_spot = False # On ne peut creuser qu'une fois
 
                                 if butin :
@@ -805,12 +805,12 @@ def lancer_jeu():
                                         chosen_room.dig_spot = True
                                         print(f"Un endroit à creuser a été marqué dans la {chosen_room.name}.")
 
-                                    objet_rammase = rooms_manager.pioche_aleatoire_objet(taux_drop=0.33)
+                                    objet_rammase = rooms_manager.pioche_aleatoire_objet(inventaire_joueur, taux_drop=0.30)
                                     if objet_rammase:
                                         if inventaire_joueur.ramasser_objet(objet_rammase):
                                             print(f"Un {objet_rammase.nom} a été ramassé et ajouté à l'inventaire. ")
                                             room_entry_messages.append(f"Un {objet_rammase.nom} est apparu et a été ramassé !")
-                                            temps_message_feedback = pygame.time.get_ticks() + 3000
+                                            temps_message_feedback = pygame.time.get_ticks() + 100
 
                                 # Effets d'entrée (spéciaux, magasins)
                                 msg_entry = chosen_room.apply_entry_effect(inventaire_joueur, grille_manoir)
@@ -1251,7 +1251,7 @@ def lancer_jeu():
                 message_to_check = ""
 
             # Change la couleur si le message est positif
-            keywords = ["parfait", "trouvez", "réussi", "gagnez"]
+            keywords = ["creuser"]
             feedback_color = RED  
             if any(keyword in message_to_check.lower() for keyword in keywords):
                 feedback_color = WHITE

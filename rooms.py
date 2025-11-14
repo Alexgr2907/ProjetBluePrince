@@ -13,9 +13,9 @@ import inventaire
 proba_objets = {
     # Ici 1 représente une rareté de 3 (légendaire) et 10 une rareté de 0 (commun), plus le poids est élevé plus l'objets a de chance d'être pioché
     # Nourriture 
-    objet.Pomme : 12, 
-    objet.Banane : 10, 
-    objet.Gateau : 8, 
+    objet.Pomme : 10, 
+    objet.Banane : 9, 
+    objet.Gateau : 7, 
     objet.Sandwich : 5, 
     objet.Repas : 3,
 
@@ -174,11 +174,16 @@ class Midas_vault(Room):
 
     def apply_entry_effect(self, player, grid):
         if self.First_time:
-            player.pieces += 50 # Ajoute 50 pièces au joueur
-            self.First_time = False # Baisse le drapeau
-            # Retourne un message pour l'afficher à l'écran
-            return "Jackpot, vous trouvez 50 pièces d'or !" 
-        return None # Ne fait rien les fois suivantes
+            nb_pieces = 50 # Ajoute 50 pièces au joueur
+            if player and player.detecteur_métaux :
+                if r.random() > 0.5 :
+                    nb_pieces += 4
+
+            player.pieces += nb_pieces
+            self.First_time = False
+            return f"Jackpot, vous trouvez {nb_pieces} pièces d'or."
+        return None 
+
 
 class Gallery(Room):
     def __init__(self):
@@ -199,7 +204,7 @@ class Dracula_tomb(Room):
     
     def apply_entry_effect(self, player, grid):
         if self.First_time:
-            player.gemmes += 4 # Ajoute 4 pièces
+            player.gemmes += 4 # Ajoute 4 gemmes
             self.First_time = False
             return "Vous trouvez 4 gemmes dans la tombe de Dracula"
         return None
@@ -215,9 +220,14 @@ class Garage(Room):
     
     def apply_entry_effect(self, player, grid):
         if self.First_time:
-            player.cles += 2 
-            self.First_time = False 
-            return "Vous trouvez 2 clés dans la boite à gant !" 
+            nb_cles = 2
+            if player and player.detecteur_métaux :
+                if r.random() > 0.5 :
+                    nb_cles += 1
+
+            player.cles += nb_cles
+            self.First_time = False
+            return f"Vous trouvez {nb_cles} clé(s) caché(es) dans la boite à gant !"
         return None 
 
 
@@ -389,6 +399,7 @@ class Courtyard(Room):
     def __init__(self):
         super().__init__(name="Courtyard", rarity=1, gem_cost=1, color="green", image_path="NouvelleSalleThèmeHorreur/Courtyard_Icon.webp")
         self.set_doors()
+        self.dig_spot = True
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
@@ -423,10 +434,16 @@ class Pantry(Room):
 
     def apply_entry_effect(self, player, grid):
         if self.First_time:
-            player.pieces += 4 # Ajoute 4 pièces
+            nb_pieces = 4   # Ajoute 4 pièces
+            if player and player.detecteur_métaux :
+                if r.random() > 0.5 :
+                    nb_pieces += 4
+
+            player.pieces += nb_pieces
             self.First_time = False
-            return "Vous trouvez 4 pièces d'or."
-        return None
+            return f"Vous trouvez {nb_pieces} pièces d'or."
+        return None        
+
 
 class Thief_Storage(Room):
     def __init__(self):
@@ -490,9 +507,10 @@ class Haunted_Gym(Room):
         return None
     
     def apply_every_entry_effect(self, player, grid):
+        player.pas -= 2
+        return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
         return None
-        #player.pas -= 2
-        #return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
+        
 
 
 class Loot_Stash(Room):
@@ -505,12 +523,22 @@ class Loot_Stash(Room):
 
     def apply_entry_effect(self, player, grid):
         if self.First_time:
-            player.cles += 1 
-            player.gemmes += 1 
-            player.pieces += 1 
-            self.First_time = False 
-            return "En fouyant dans ce bordel, vous trouvez 1 Clé, 1 gemme et 1 pièce " 
-        return None 
+            nb_pieces = 1
+            nb_cles = 1
+            nb_gemmes = 1
+            
+            if player and player.detecteur_métaux :
+                if r.random() > 0.5 :
+                    nb_pieces += 1
+                    nb_cles += 1
+
+            player.pieces += nb_pieces
+            player.cles += nb_cles
+            player.gemmes += nb_gemmes
+            self.First_time = False
+            return f"En fouyant dans ce bordel, vous trouvez {nb_cles} clé(s), {nb_gemmes} gemme et {nb_pieces} pièce(s)."
+        return None        
+
 
 
 
@@ -661,9 +689,14 @@ class Statue_Hall(Room):
 
     def apply_entry_effect(self, player, grid):
         if self.First_time:
-            player.cles += 1 
+            nb_cles = 1
+            if player and player.detecteur_métaux :
+                if r.random() > 0.5 :
+                    nb_cles += 1
+
+            player.cles += nb_cles
             self.First_time = False
-            return "Vous trouvez 1 Clé caché derrière une statue."
+            return f"Vous trouvez {nb_cles} clé(s) caché(es) derrière une statue."
         return None
 
 class Chucky_Bedroom(Room):

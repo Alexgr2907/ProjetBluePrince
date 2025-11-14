@@ -176,10 +176,13 @@ def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y
 
 #-------------------- Pioche aléatoire des consommables
 
-def pioche_aleatoire_objet(taux_drop: float = 0.5):
+def pioche_aleatoire_objet(inventaire_joueur, taux_drop: float = 0.5):
     """
     Détermine si un objet doit être pioché et lequel
     """
+
+    if inventaire_joueur and inventaire_joueur.patte_lapin :
+        taux_drop = (min(1.0, taux_drop+0.3))
 
     if random.random() > taux_drop :
         return None # Aucun objet est dropé
@@ -197,12 +200,18 @@ def pioche_aleatoire_objet(taux_drop: float = 0.5):
 
 #-------------------- Pioche aléatoire de l'endroit à creuser
 
-def pioche_butin_creuser():
+def pioche_butin_creuser(inventaire_joueur):
     """
     Détermine le butin apres avoir creusé : 50% rien, 50% des objets consommbales
     """
 
-    if random.random() < 0.5 :
+    taux_base = 0.10
+
+    if inventaire_joueur and inventaire_joueur.patte_lapin :
+        taux_base = (min(1.0, taux_base+0.3))
+
+
+    if random.random() < taux_base :
 
         consommable_classes = {
             cls : weight

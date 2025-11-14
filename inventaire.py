@@ -14,10 +14,10 @@ class Inventaire:
         
         # Objets permanents 
         self.pelle = True
-        self.patte_lapin = True
+        self.patte_lapin = False
         self.kit_crochetage = True
         self.marteau = False
-        self.detecteur_métaux = False
+        self.detecteur_métaux = True
         
 
     def depenser_piece(self, montant):
