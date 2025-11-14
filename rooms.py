@@ -274,23 +274,20 @@ class Locksmith(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': False}
-    """
-    def add_objects(self, player):
-        # Voir dans player combien de pièce sont présente et 
-        price = int(input("Choose 1 key for 5 coins, 3 keys for 12 coins or lock picking kit for 15 coins"))
-        if price == 5:
-            # self.objects_in_room.append(Gold(-5))
-            # self.objects_in_room.append(Key(1))  
-        elif price == 12:
-            # self.objects_in_room.append(Gold(-12))
-            # self.objects_in_room.append(Key(3))  
-        elif price == 15:
-            # self.objects_in_room.append(Gold(-15))
-            # self.objects_in_room.append(Lock_picking_kit)  
-        else:
-            pass
-        pass
-    """
+
+    def apply_entry_effect(self, player, grid):
+        # Renvoie le signal à la première entrée
+        if self.First_time:
+            self.First_time = False
+            return "open_shop_locksmith"
+        return None
+    
+    def apply_every_entry_effect(self, player, grid):
+        if self.First_time == False:
+        # Cette fonction est appelée à chaque entrée.
+        # Elle retourne un signal à affichage.py pour ouvrir le menu.
+            return "open_shop_locksmith"
+        return None
 
 
 class Maze(Room):
@@ -589,6 +586,20 @@ class Pawn_Shop(Room):
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': True}
 
+    def apply_entry_effect(self, player, grid):
+        # Renvoie le signal à la première entrée
+        if self.First_time:
+            self.First_time = False
+            return "open_shop_pawnshop"
+        return None
+    
+    def apply_every_entry_effect(self, player, grid):
+        if self.First_time == False:
+        # Cette fonction est appelée à chaque entrée.
+        # Elle retourne un signal à affichage.py pour ouvrir le menu.
+            return "open_shop_pawnshop"
+        return None
+    
 
 class Pumpkin_Field(Room):
     def __init__(self):

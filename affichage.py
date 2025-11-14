@@ -352,7 +352,7 @@ pioche_principale = create_initial_deck()
 
 # GESTION D'ÉTAT 
 en_cours = True
-etat_du_jeu = "deplacement" # "deplacement", "selection_salle", "inventaire", "shopping_locksmith", "gagne", "confirmation_porte"
+etat_du_jeu = "deplacement" # "deplacement", "selection_salle", "inventaire", "shopping_locksmith", "shopping_pawnshop", "gagne", "confirmation_porte"
 selection_salle_actuelle = [] 
 
 # Variables pour l'état de l'inventaire
@@ -599,11 +599,25 @@ while en_cours:
 
                             msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir) 
 
-                            if msg: 
-                                message_queue.append(msg)
+                            if msg:
+                                                            
+                                if msg == "open_shop_locksmith":
+                                    etat_du_jeu = "shopping_locksmith"
+                                    selected_direction = None # Réinitialise le curseur
+                                    target_x = player_x
+                                    target_y = player_y
+                                elif msg == "open_shop_pawnshop":
+                                    etat_du_jeu = "shopping_pawnshop"
+                                    selected_direction = None # Réinitialise le curseur
+                                    target_x = player_x
+                                    target_y = player_y
+                                # --- FIN AJOUT ---
+                                else:
+                                    message_queue.append(msg)
+
                                 if not message_feedback:
                                     message_feedback = message_queue.pop(0)
-                                    temps_message_feedback = pygame.time.get_ticks() + 3000
+                                    temps_message_feedback = pygame.time.get_ticks() + 2000
 
 
                             selected_direction = None
@@ -663,13 +677,30 @@ while en_cours:
                                     room_entry_messages.append(f"Un {objet_rammase.nom} est apparu et a été ramassé !")
                                     temps_message_feedback = pygame.time.get_ticks() + 3000
 
-                        msg_entry = chosen_room.apply_entry_effect(inventaire_joueur, grille_manoir)
-                        if msg_entry :
-                            room_entry_messages.append(msg_entry)
+                                               
+                        # On vérifie les deux messages de retour pour les signaux de magasin
 
-                        msg_every= chosen_room.apply_every_entry_effect(inventaire_joueur, grille_manoir)
-                        if msg_every:
-                            room_entry_messages.append(msg_every)
+                        msg_entry = chosen_room.apply_entry_effect(inventaire_joueur, grille_manoir)
+                        if msg_entry:
+                            if msg_entry == "open_shop_locksmith":
+                                etat_du_jeu = "shopping_locksmith"
+                            elif msg_entry == "open_shop_pawnshop":
+                                etat_du_jeu = "shopping_pawnshop"
+                            else:
+                                # Si ce n'est pas un signal, c'est un message normal
+                                room_entry_messages.append(msg_entry)
+
+                        # On ne vérifie le 2e message QUE SI un magasin n'a pas déjà été ouvert
+                        if etat_du_jeu != "shopping_locksmith" and etat_du_jeu != "shopping_pawnshop":
+                            msg_every = chosen_room.apply_every_entry_effect(inventaire_joueur, grille_manoir)
+                            if msg_every:
+                                if msg_every == "open_shop_locksmith":
+                                    etat_du_jeu = "shopping_locksmith"
+                                elif msg_every == "open_shop_pawnshop":
+                                    etat_du_jeu = "shopping_pawnshop"
+                                else:
+                                    room_entry_messages.append(msg_every)
+                    
 
                         # --- NOUVELLE GESTION DES MESSAGES (simultané) ---
                         if room_entry_messages:
@@ -679,18 +710,35 @@ while en_cours:
                             room_entry_messages.clear()
                             
                         
-                        if chosen_room in pioche_principale:
-                            pioche_principale.remove(chosen_room)
+                        # On ne change l'état QUE SI un magasin n'a pas été ouvert
+                        if etat_du_jeu != "shopping_locksmith" and etat_du_jeu != "shopping_pawnshop":
+                            
+                            if chosen_room in pioche_principale:
+                                pioche_principale.remove(chosen_room)
+                            
+                            player_x = target_x
+                            player_y = target_y
+                            inventaire_joueur.pas -= 1
+                            
+                            etat_du_jeu = "deplacement"
+                            selection_salle_actuelle = []
+                            selected_direction = None
+                            target_x = player_x
+                            target_y = player_y
                         
-                        player_x = target_x
-                        player_y = target_y
-                        inventaire_joueur.pas -= 1
-                        
-                        etat_du_jeu = "deplacement"
-                        selection_salle_actuelle = []
-                        selected_direction = None
-                        target_x = player_x
-                        target_y = player_y
+                        else:
+                            # Si un magasin S'EST OUVERT :
+                            # On retire quand même la pièce et on déplace le joueur
+                            if chosen_room in pioche_principale:
+                                pioche_principale.remove(chosen_room)
+                            player_x = target_x
+                            player_y = target_y
+                            inventaire_joueur.pas -= 1
+                            
+                            # On réinitialise juste la sélection, mais on LAISSE l'état
+                            # sur "shopping_..."
+                            selection_salle_actuelle = []
+                            selected_direction = None
                     else:
                         message_feedback = "Pas assez de gemmes !"
                         temps_message_feedback = pygame.time.get_ticks() + 2000
@@ -767,6 +815,76 @@ while en_cours:
                     if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
                         sous_etat_inv = "menu_contextuel" 
             
+            #ÉTAT 4,a: LE JOUEUR EST DANS LE LOCKSMITH
+            elif etat_du_jeu == "shopping_locksmith":
+                if event.key == pygame.K_RETURN: # CHANGÉ
+                        etat_du_jeu = "deplacement" # Quitte le magasin
+                        continue
+                    
+                choix = -1
+
+                if event.key == pygame.K_q: choix = 1 # CHANGÉ
+                elif event.key == pygame.K_s: choix = 2 # CHANGÉ
+                elif event.key == pygame.K_d: choix = 3 # CHANGÉ
+                
+                if choix == 1: # Acheter 1 clé pour 5 pièces
+                    if inventaire_joueur.depenser_piece(5):
+                        inventaire_joueur.cles += 1
+                        message_queue.append(("Achat réussi ! (+1 Clé)", MESSAGE_DURATION))
+                    else:
+                        message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
+                
+                elif choix == 2: # Acheter 3 clés pour 12 pièces
+                    if inventaire_joueur.depenser_piece(12):
+                        inventaire_joueur.cles += 3
+                        message_queue.append(("Achat réussi ! (+3 Clés)", MESSAGE_DURATION))
+                    else:
+                        message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
+
+                elif choix == 3: # Acheter Kit pour 15 pièces
+                    if inventaire_joueur.kit_crochetage:
+                        message_queue.append(("Vous avez déjà le Kit !", MESSAGE_DURATION))
+                    elif inventaire_joueur.depenser_piece(15):
+                        inventaire_joueur.kit_crochetage = True
+                        message_queue.append(("Achat réussi ! (Kit de Crochetage)", MESSAGE_DURATION))
+                    else:
+                        message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
+
+            #  ÉTAT 4,b: LE JOUEUR EST DANS LE PAWN SHOP 
+            elif etat_du_jeu == "shopping_pawnshop":
+                if event.key == pygame.K_RETURN: # CHANGÉ
+                        etat_du_jeu = "deplacement" # Quitte le magasin
+                        continue
+                    
+                choix = -1
+                if event.key == pygame.K_q: choix = 1 # CHANGÉ
+                elif event.key == pygame.K_s: choix = 2 # CHANGÉ
+                elif event.key == pygame.K_d: choix = 3 # CHANGÉ
+                
+                if choix == 1: # Acheter Oeuf d'araignée (Pomme) pour 3 pièces
+                    if inventaire_joueur.depenser_piece(3):
+                        inventaire_joueur.ramasser_objet(objet.Pomme())
+                        message_queue.append(("Achat réussi ! (+1 Oeuf d'araignée)", MESSAGE_DURATION))
+                    else:
+                        message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
+                
+                elif choix == 2: # Acheter Araignée (Banane) pour 5 pièces
+                    if inventaire_joueur.depenser_piece(5):
+                        inventaire_joueur.ramasser_objet(objet.Banane())
+                        message_queue.append(("Achat réussi ! (+1 Araignée)", MESSAGE_DURATION))
+                    else:
+                        message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
+
+                elif choix == 3: # Acheter Pelle pour 15 pièces
+                    if inventaire_joueur.pelle:
+                        message_queue.append(("Vous avez déjà le marteau !", MESSAGE_DURATION))
+                    elif inventaire_joueur.depenser_piece(15):
+                        inventaire_joueur.ramasser_objet(objet.Marteau())
+                        message_queue.append(("Achat réussi ! (Marteau)", MESSAGE_DURATION))
+                    else:
+                        message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
+            
+        
             # ÉTAT 5: LE JOUEUR CONFIRME L'OUVERTURE D'UNE PORTE
             elif etat_du_jeu == "confirmation_porte":
                 
@@ -1145,6 +1263,104 @@ while en_cours:
             # Dessin du message
             screen.blit(reroll_text, reroll_rect)
 
+
+    # --- AJOUT : DESSINER LE MENU DU LOCKSMITH ---
+    if etat_du_jeu == "shopping_locksmith":
+        # Fond semi-transparent
+        s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 200))
+        screen.blit(s, (0, 0))
+
+        # Boîte de dialogue
+        box_width = int(GRID_SIZE * 9)
+        box_height = int(GRID_SIZE * 5)
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+        
+        pygame.draw.rect(screen, UI_BLUE_DARK, box_rect, border_radius=10)
+        pygame.draw.rect(screen, WHITE, box_rect, width=3, border_radius=10)
+
+        # Titre
+        title_text = MENU_TITLE_FONT.render("Magasin du Serrurier", True, WHITE)
+        screen.blit(title_text, title_text.get_rect(center=(box_rect.centerx, box_rect.top + int(GRID_SIZE * 0.7))))
+
+        # Pièces actuelles
+        pieces_text = MENU_CARD_FONT.render(f"Vous avez: {inventaire_joueur.pieces} pièces", True, UI_HIGHLIGHT)
+        screen.blit(pieces_text, pieces_text.get_rect(center=(box_rect.centerx, box_rect.top + int(GRID_SIZE * 1.5))))
+
+        # Options
+        y_pos = box_rect.centery + int(GRID_SIZE * 0.2)
+        options = [
+            (f"(1) Acheter 1 Clé (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
+            (f"(2) Acheter 3 Clés (Coût: 12 Pièces)", inventaire_joueur.pieces >= 12),
+            (f"(3) Acheter Kit Crochetage (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15 and not inventaire_joueur.kit_crochetage)
+        ]
+        
+        for text, can_afford in options:
+            color = WHITE if can_afford else GRAY
+            option_text = MENU_CARD_FONT.render(text, True, color)
+            screen.blit(option_text, option_text.get_rect(center=(box_rect.centerx, y_pos)))
+            y_pos += int(GRID_SIZE * 0.5)
+        
+        if inventaire_joueur.kit_crochetage:
+            kit_text = MENU_CARD_FONT.render("(Kit de crochetage déjà possédé)", True, GRAY)
+            screen.blit(kit_text, kit_text.get_rect(center=(box_rect.centerx, y_pos)))
+            y_pos += int(GRID_SIZE * 0.5)
+
+        # Quitter
+        quit_text = MENU_CARD_FONT.render("Appuyez sur ECHAP pour quitter", True, WHITE)
+        screen.blit(quit_text, quit_text.get_rect(center=(box_rect.centerx, box_rect.bottom - int(GRID_SIZE * 0.5))))
+
+    # --- AJOUT : DESSINER LE MENU DU PAWN SHOP ---
+    if etat_du_jeu == "shopping_pawnshop":
+        # Fond semi-transparent
+        s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 200))
+        screen.blit(s, (0, 0))
+
+        # Boîte de dialogue
+        box_width = int(GRID_SIZE * 9)
+        box_height = int(GRID_SIZE * 5)
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+        
+        pygame.draw.rect(screen, UI_BLUE_DARK, box_rect, border_radius=10)
+        pygame.draw.rect(screen, WHITE, box_rect, width=3, border_radius=10)
+
+        # Titre
+        title_text = MENU_TITLE_FONT.render("Prêteur sur Gages", True, WHITE)
+        screen.blit(title_text, title_text.get_rect(center=(box_rect.centerx, box_rect.top + int(GRID_SIZE * 0.7))))
+
+        # Pièces actuelles
+        pieces_text = MENU_CARD_FONT.render(f"Vous avez: {inventaire_joueur.pieces} pièces", True, UI_HIGHLIGHT)
+        screen.blit(pieces_text, pieces_text.get_rect(center=(box_rect.centerx, box_rect.top + int(GRID_SIZE * 1.5))))
+
+        # Options
+        y_pos = box_rect.centery + int(GRID_SIZE * 0.2)
+        options = [
+            (f"(1) Acheter Oeuf d'araignée (Coût: 3 Pièces)", inventaire_joueur.pieces >= 3),
+            (f"(2) Acheter Araignée (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
+            (f"(3) Acheter Pelle (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15 and not inventaire_joueur.pelle)
+        ]
+        
+        for text, can_afford in options:
+            color = WHITE if can_afford else GRAY
+            option_text = MENU_CARD_FONT.render(text, True, color)
+            screen.blit(option_text, option_text.get_rect(center=(box_rect.centerx, y_pos)))
+            y_pos += int(GRID_SIZE * 0.5)
+        
+        if inventaire_joueur.pelle:
+            kit_text = MENU_CARD_FONT.render("(Pelle déjà possédé)", True, GRAY)
+            screen.blit(kit_text, kit_text.get_rect(center=(box_rect.centerx, y_pos)))
+            y_pos += int(GRID_SIZE * 0.5)
+
+        # Quitter
+        quit_text = MENU_CARD_FONT.render("Appuyez sur ECHAP pour quitter", True, WHITE)
+        screen.blit(quit_text, quit_text.get_rect(center=(box_rect.centerx, box_rect.bottom - int(GRID_SIZE * 0.5))))
+
+        
     # DESSINER L'INTERFACE DE L'INVENTAIRE (Plein écran 'I')
     if etat_du_jeu == "inventaire":
         dessiner_interface_inventaire(screen, inventaire_joueur, 
