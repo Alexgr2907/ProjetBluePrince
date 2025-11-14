@@ -613,7 +613,7 @@ while en_cours:
                                     target_y = player_y
                                 # --- FIN AJOUT ---
                                 else:
-                                    message_queue.append(msg)
+                                    message_queue.append((msg, MESSAGE_DURATION))
 
                                 if not message_feedback:
                                     message_feedback = message_queue.pop(0)
@@ -955,7 +955,7 @@ while en_cours:
                             etat_du_jeu = "gagne"
                         else:
                             msg = target_cell.apply_every_entry_effect(inventaire_joueur, grille_manoir)
-                            if msg: message_queue.append(msg)
+                            if msg: message_queue.append((msg, MESSAGE_DURATION))
                             etat_du_jeu = "deplacement" # Retour au déplacement
 
                         # 5. Réinitialiser (SEULEMENT APRÈS UN DÉPLACEMENT)
@@ -1292,9 +1292,9 @@ while en_cours:
         # Options
         y_pos = box_rect.centery + int(GRID_SIZE * 0.2)
         options = [
-            (f"(1) Acheter 1 Clé (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
-            (f"(2) Acheter 3 Clés (Coût: 12 Pièces)", inventaire_joueur.pieces >= 12),
-            (f"(3) Acheter Kit Crochetage (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15 and not inventaire_joueur.kit_crochetage)
+            (f"(Q) Acheter 1 Clé (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
+            (f"(S) Acheter 3 Clés (Coût: 12 Pièces)", inventaire_joueur.pieces >= 12),
+            (f"(D) Acheter Kit Crochetage (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15 and not inventaire_joueur.kit_crochetage)
         ]
         
         for text, can_afford in options:
@@ -1309,7 +1309,7 @@ while en_cours:
             y_pos += int(GRID_SIZE * 0.5)
 
         # Quitter
-        quit_text = MENU_CARD_FONT.render("Appuyez sur ECHAP pour quitter", True, WHITE)
+        quit_text = MENU_CARD_FONT.render("Appuyez sur ENTER pour quitter", True, WHITE)
         screen.blit(quit_text, quit_text.get_rect(center=(box_rect.centerx, box_rect.bottom - int(GRID_SIZE * 0.5))))
 
     # --- AJOUT : DESSINER LE MENU DU PAWN SHOP ---
@@ -1340,9 +1340,9 @@ while en_cours:
         # Options
         y_pos = box_rect.centery + int(GRID_SIZE * 0.2)
         options = [
-            (f"(1) Acheter Oeuf d'araignée (Coût: 3 Pièces)", inventaire_joueur.pieces >= 3),
-            (f"(2) Acheter Araignée (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
-            (f"(3) Acheter Pelle (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15 and not inventaire_joueur.pelle)
+            (f"(Q) Acheter Oeuf d'araignée (Coût: 3 Pièces)", inventaire_joueur.pieces >= 3),
+            (f"(S) Acheter Araignée (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
+            (f"(D) Acheter Pelle (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15 and not inventaire_joueur.pelle)
         ]
         
         for text, can_afford in options:
@@ -1357,7 +1357,7 @@ while en_cours:
             y_pos += int(GRID_SIZE * 0.5)
 
         # Quitter
-        quit_text = MENU_CARD_FONT.render("Appuyez sur ECHAP pour quitter", True, WHITE)
+        quit_text = MENU_CARD_FONT.render("Appuyez sur ENTER pour quitter", True, WHITE)
         screen.blit(quit_text, quit_text.get_rect(center=(box_rect.centerx, box_rect.bottom - int(GRID_SIZE * 0.5))))
 
         
