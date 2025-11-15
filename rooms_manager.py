@@ -291,3 +291,51 @@ def set_door_statuses(room, grid, x, y, previous_x, previous_y):
     entry_dir = get_entry_direction(previous_x, previous_y, x, y)
     if entry_dir:
         room.doors_statut[entry_dir] = 0
+
+    
+def condi_blocage(grille_manoir, MANOR_WIDTH, MANOR_HEIGHT):
+    """
+    Vérifie si on est bloqué ou pas
+    """
+
+    for y in range(MANOR_HEIGHT-1):
+        for x in range(MANOR_WIDTH):
+
+            salle_courante = grille_manoir[y][x]
+
+            #On vérifie qu'il y a bien une salle à cette position
+            if salle_courante is not None :  
+                #On vérifie qu'uen des portes mène vers le Nord
+                if salle_courante.door_location.get('north', False) :  
+                    #On calcule la position de la salle voisine tout en vérifiant qu'elle est bien dans les limites
+                    voisin_y = y - 1
+                    if voisin_y >= 0 :
+                        #On vérifie que al salle voisine est bien vide
+                        if grille_manoir[voisin_y][x] is None :
+                            return False
+                            #Le jeu n'est pas blqoué car il existe une salle qui peut s'étendre
+
+    SALLE_DEPART_X = MANOR_WIDTH // 2 
+    SALLE_DEPART_Y = MANOR_HEIGHT - 1
+
+    salle_entree = grille_manoir[SALLE_DEPART_Y][SALLE_DEPART_X]
+
+    if salle_entree is not None:
+        voisin_x_est = SALLE_DEPART_X + 1
+        if voisin_x_est < MANOR_WIDTH and salle_entree.door_location.get('east', False):
+            if grille_manoir[SALLE_DEPART_Y][voisin_x_est] is None:
+                return False # Peut pivoter Est -> Pas bloqué
+
+        voisin_x_ouest = SALLE_DEPART_X - 1
+        if voisin_x_ouest >= 0 and salle_entree.door_location.get('west', False):
+            if grille_manoir[SALLE_DEPART_Y][voisin_x_ouest] is None:
+                return False # Peut pivoter Ouest -> Pas bloqué
+
+
+    return True
+    #Le jeu est  blqoué car il n'existe pas de salle qui peut s'étendre
+
+
+
+
+

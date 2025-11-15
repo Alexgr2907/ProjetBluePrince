@@ -863,7 +863,7 @@ def lancer_jeu():
                         etat_du_jeu = "deplacement"
                         selection_salle_actuelle = []
                         selected_direction = None
-
+            
                 #  ÉTAT 3: INVENTAIRE (Touche 'I') 
                 elif etat_du_jeu == "inventaire":
                     if event.key == pygame.K_i:
@@ -1080,6 +1080,13 @@ def lancer_jeu():
         
         # Défaite
         if inventaire_joueur.pas <= 0:
+            etat_du_jeu = "game_over_pas"
+        
+        if rooms_manager.condi_blocage(grille_manoir, MANOR_WIDTH, MANOR_HEIGHT):
+            etat_du_jeu = "game_over_bloque"
+
+
+        if etat_du_jeu in ["game_over_pas", "game_over_bloque"]:
             screen.fill(BLACK)
             font_large = pygame.font.Font(None, 100)
             perdu_text = font_large.render("Perdu !", True, RED)
@@ -1089,6 +1096,7 @@ def lancer_jeu():
             pygame.time.wait(3000)
             en_cours = False
             continue 
+
         
         # Victoire
         if etat_du_jeu == "gagne":
