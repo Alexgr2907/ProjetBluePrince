@@ -305,32 +305,22 @@ def condi_blocage(grille_manoir, MANOR_WIDTH, MANOR_HEIGHT):
 
             #On vérifie qu'il y a bien une salle à cette position
             if salle_courante is not None :  
-                #On vérifie qu'uen des portes mène vers le Nord
-                if salle_courante.door_location.get('north', False) :  
-                    #On calcule la position de la salle voisine tout en vérifiant qu'elle est bien dans les limites
-                    voisin_y = y - 1
-                    if voisin_y >= 0 :
-                        #On vérifie que al salle voisine est bien vide
-                        if grille_manoir[voisin_y][x] is None :
-                            return False
-                            #Le jeu n'est pas blqoué car il existe une salle qui peut s'étendre
+                
+                directions = [ (-1, 0, 'north'),    # Nord (y - 1)
+                               (1, 0, 'south'),     # Sud (y + 1)
+                               (0, 1, 'east'),      # Est (x + 1)
+                               (0, -1, 'west'),]    # Ouest (x - 1)
 
-    SALLE_DEPART_X = MANOR_WIDTH // 2 
-    SALLE_DEPART_Y = MANOR_HEIGHT - 1
+                for dy, dx, direction_porte in directions:
+                    voisin_y = y + dy
+                    voisin_x = x + dx
 
-    salle_entree = grille_manoir[SALLE_DEPART_Y][SALLE_DEPART_X]
-
-    if salle_entree is not None:
-        voisin_x_est = SALLE_DEPART_X + 1
-        if voisin_x_est < MANOR_WIDTH and salle_entree.door_location.get('east', False):
-            if grille_manoir[SALLE_DEPART_Y][voisin_x_est] is None:
-                return False # Peut pivoter Est -> Pas bloqué
-
-        voisin_x_ouest = SALLE_DEPART_X - 1
-        if voisin_x_ouest >= 0 and salle_entree.door_location.get('west', False):
-            if grille_manoir[SALLE_DEPART_Y][voisin_x_ouest] is None:
-                return False # Peut pivoter Ouest -> Pas bloqué
-
+                    if salle_courante.door_location.get(direction_porte, False) :  
+                        #On vérifie que la salle est bien dans les limites
+                        if 0 <= voisin_y < MANOR_HEIGHT and 0 <= voisin_x < MANOR_WIDTH:
+                            if grille_manoir[voisin_y][voisin_x] is None :
+                                return False
+                                #Le jeu n'est pas blqoué car il existe une salle qui peut s'étendre
 
     return True
     #Le jeu est  blqoué car il n'existe pas de salle qui peut s'étendre

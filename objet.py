@@ -1,3 +1,4 @@
+from inventaire import Inventaire
 
 #---------- DEFINITION DES OBJETS DU JEU ----------#
 #---------- CLASSE MERE : OBJET ----------#
@@ -26,10 +27,19 @@ class Nourriture(Consommable):
         super().__init__(nom, description, rarete)
         self.pas_rendus = pas_rendus
 
-    def utiliser(self, inventaire):
-        """
-        Utilise la nourriture pour rendre des pas.
-        """
+    def utiliser(self, inventaire : Inventaire) -> bool:
+        """ Utilise la nourriture pour rendre des pas.
+
+        Parameters
+        ----------
+        inventaire : Inventaire
+            L'objet Inventaire du joueur dont les pas seront augmentés.
+
+        Returns
+        -------
+        bool 
+            Renvoie True si la nourriture a été utilisé.
+        """        
         inventaire.pas += self.pas_rendus
         print(f"{self.nom} consommé : +{self.pas_rendus} pas.")
         return True
@@ -67,7 +77,21 @@ class Ressource(Consommable):
         super().__init__(nom, description, rarete)
         self.quantite = quantite
 
-    def utiliser(self, inventaire):
+    def utiliser(self, inventaire : Inventaire) -> bool:
+        """ Ajoute la quantité de l'objet à l'attribut correspondant dans l'inventaire.
+
+        Parameters
+        ----------
+        inventaire : Inventaire
+            L'objet Inventaire du joueur qui doit être mis à jour.
+            L'objet doit posséder un attribut correspondant au nom de cet objet.
+
+        Returns
+        -------
+        bool 
+            Renvoie True si l'attribut correspondant a été trouvé et mis à jour.
+            Renvoie False si l'inventaire ne possède pas l'attribut cible.
+        """        
         attribut_inventaire = self.nom.lower().replace("é", "e") # Crée le nom d'attribut correspondant
         if hasattr(inventaire, attribut_inventaire): #  Vérification de l'existence de l'attribut
             valeur_actuelle = getattr(inventaire, attribut_inventaire)  # Récupere la valeur actuelle
@@ -106,10 +130,20 @@ class Permanent(Objet):
     def __init__(self, nom: str, description: str, rarete: int):
         super().__init__(nom, description, "permanent", rarete)
 
-    def utiliser(self, inventaire):
-        """
-        Utilise l'objet permanent dans l'inventaire.
-        """
+    def utiliser(self, inventaire : Inventaire) -> bool:
+        """ Active l'attribut permanent correspondant dans l'inventaire du joueur.
+
+        Parameters
+        ----------
+        inventaire : Inventaire
+            L'objet Inventaire du joueur dans lequel l'attribut permanent sera activé.
+
+        Returns
+        -------
+        bool 
+            Renvoie True si l'attribut correspondant a été trouvé et mis à jour.
+            Renvoie False si l'inventaire ne possède pas l'attribut cible.
+        """        
         attribut_inventaire = self.nom.lower().replace(' ', '_')  # Crée le nom d'attribut correspondant
         if hasattr(inventaire, attribut_inventaire):  # Vérification de l'existence de l'attribut
             setattr(inventaire, attribut_inventaire, True)  # Active l'attribut permanent dans l'inventaire

@@ -217,7 +217,6 @@ def lancer_jeu():
         elif index_categorie == 1:
             liste_permanents = []
             if inventaire.pelle: liste_permanents.append("Pelle")
-            if inventaire.marteau: liste_permanents.append("Marteau")
             if inventaire.kit_crochetage: liste_permanents.append("Kit de Crochetage")
             if inventaire.detecteur_métaux: liste_permanents.append("Détecteur de Métaux")
             if inventaire.patte_lapin: liste_permanents.append("Patte de Lapin")
@@ -509,7 +508,6 @@ def lancer_jeu():
         
         liste_permanents = []
         if inventaire_joueur.pelle: liste_permanents.append("Pelle")
-        if inventaire_joueur.marteau: liste_permanents.append("Marteau")
         if inventaire_joueur.kit_crochetage: liste_permanents.append("Kit de Crochetage")
         if inventaire_joueur.detecteur_métaux: liste_permanents.append("Détecteur de Métaux")
         if inventaire_joueur.patte_lapin: liste_permanents.append("Patte de Lapin")

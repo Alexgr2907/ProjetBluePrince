@@ -16,44 +16,78 @@ class Inventaire:
         self.pelle = True
         self.patte_lapin = False
         self.kit_crochetage = True
-        self.marteau = False
         self.detecteur_métaux = True
         
 
-    def depenser_piece(self, montant):
-        """
-        Dépense des pièces si possible.
-        """
+    def depenser_piece(self, montant : int) -> bool:
+        """ Dépense des pièces si possible.
+
+        Parameters
+        ----------
+        montant : int
+            Le nombre de pieces à dépenser;
+
+        Returns
+        -------
+        bool
+            Renvoie True si le montant a été dépensé, False sinon.
+        """        
         if self.pieces >= montant :
             self.pieces -= montant
             return True
         else :
             return False  
 
-    def depenser_gemmes(self, montant):
-        """
-        Dépense des gemmes si possible.
-        """
+    def depenser_gemmes(self, montant : int) -> bool :
+        """Dépense des gemmes si possible.
+
+        Parameters
+        ----------
+        montant : int
+            Le nombre de gemmes à dépenser;
+
+        Returns
+        -------
+        bool
+            Renvoie True si le montant a été dépensé, False sinon.
+        """        
         if self.gemmes >= montant :
             self.gemmes -= montant
             return True
         else :
             return False   
 
-    def depenser_cles(self, montant):
-        """
-        Dépense des clés si possible.
-        """
+    def depenser_cles(self,montant : int) -> bool :
+        """Dépense des clés si possible.
+
+        Parameters
+        ----------
+        montant : int
+            Le nombre de clés à dépenser;
+
+        Returns
+        -------
+        bool
+            Renvoie True si le montant a été dépensé, False sinon.
+        """        
         if self.cles >= montant :
             self.cles -= montant
             return True
         else :
             return False
 
-    def depenser_des(self, montant):
-        """
-        Dépense des dés si possible.
-        """
+    def depenser_des(self, montant : int) -> bool :
+        """Dépense des dés si possible.
+        Parameters
+        ----------
+        montant : int
+            Le nombre de dés à dépenser;
+
+        Returns
+        -------
+        bool
+            Renvoie True si le montant a été dépensé, False sinon.
+        """        
         if self.des >= montant :
             self.des -= montant
             return True
@@ -61,11 +95,19 @@ class Inventaire:
             return False
 
 
-    def ramasser_objet(self, nouvel_objet):
-        """
-        Rammasse un objet et met à jour dans l'inventaire.
-        """
+    def ramasser_objet(self, nouvel_objet : objet) -> bool :
+        """Rammasse un objet et le met à jour dans l'inventaire.
 
+        Parameters
+        ----------
+        nouvel_objet : Objet
+            Le nouvel objet à ajouter à l'inventaire
+
+        Returns
+        -------
+        bool
+            Renvoie True si le nouvel objet a bien été rammassé, False sinon.
+        """        
         if isinstance(nouvel_objet, objet.Consommable): 
 
             if isinstance(nouvel_objet, objet.Ressource):  # 1er cas : Ressource
@@ -99,11 +141,19 @@ class Inventaire:
 
 
     
-    def utiliser_objet_consommable(self, nom_objet :str):
-        """
-        Utilise un objet consommable (nourriture) de l'inventaire.
-        """
+    def utiliser_objet_consommable(self, nom_objet :str) -> bool :
+        """Utilise un objet consommable (nourriture) de l'inventaire.
 
+        Parameters
+        ----------
+        nom_objet : str
+            Le nom de l'objet consommable.
+
+        Returns
+        -------
+        bool
+            Renvoie True si l'objet a bien été consommé, False sinon.
+        """        
         if nom_objet in self.objets and self.objets[nom_objet] > 0:
             # On crée un catalogue qui stocke les classes des objets consommables
             catalogue = {
