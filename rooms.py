@@ -118,12 +118,12 @@ class Room(ABC):
     # Le player servira à verifier l'inventaire du joueur pour dans certain cas
     # ajouter des effets en fonction de l'objet
     # Sert à ajouter des objets dans la salle
-
+    """
     def add_objects(self, player):
-        """
+        
         Ajoute des objets aléatoires à la pièce lors de sa création.
         C'est ici que tu gères "Aléatoire dans les objets disponibles dans les pièces".
-        """
+        
         # Par défaut, une pièce ne contient rien 
         self.objects_in_room = []
         
@@ -138,7 +138,7 @@ class Room(ABC):
         #    
         #    if random.random() < probability:
         #        self.objects_in_room.append(Chest())
-
+    """
     #Sert à appliquer un effet à la première entrée dans la salle
     def apply_entry_effect(self, player, grid):
         """
@@ -154,13 +154,13 @@ class Room(ABC):
             return "Vous remarquez un endroit dans la pièce qui semble parfait pour creuser (Touche C)!"
         return None
 
-
+    """
     def generation_objet(self, taux_drop : float = 0.5):
-        """
+        
         Tente de génerer un objet aléatoire
-        """
+        
         pass # génération dans room_manager
-
+    """
 class Midas_vault(Room):
     def __init__(self):
         # Appelle le constructeur de la classe mère (Room)
@@ -299,7 +299,7 @@ class Locksmith(Room):
             return "open_shop_locksmith"
         return None
 
-
+# A faireeee
 class Maze(Room):
 
     def __init__(self):
@@ -394,7 +394,8 @@ class Closet(Room):
                 return "Le placard est vide..." # Si jamais le tirage échoue
 
         return None 
-    
+
+# A FAIREEE  
 class Courtyard(Room):
     def __init__(self):
         super().__init__(name="Courtyard", rarity=1, gem_cost=1, color="green", image_path="NouvelleSalleThèmeHorreur/Courtyard_Icon.webp")
@@ -403,13 +404,19 @@ class Courtyard(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
-    """
-    def add_objects(self, player):
-        #  self.objects_in_room.append(Digspot(1))
-        # self.permanent_object.append(Shovel)
-    """
+    
+    def apply_entry_effect(self, player, grid):
+        if self.First_time:
+            self.First_time = False
+
+            # On vérifie si le joueur a déjà une pelle 
+            if not player.pelle:
+                player.ramasser_objet(objet.Pelle())
+                return "Vous avez trouvé une Pelle abandonnée !"
+
+        return None 
         
-        
+# A FAIIRREEEE     
 class Corridor(Room):
     def __init__(self):
         super().__init__(name="Corridor", rarity=1, gem_cost=0, color="orange", image_path="NouvelleSalleThèmeHorreur/Corridor_Icon.webp")
@@ -452,11 +459,44 @@ class Thief_Storage(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
-    """
-    def apply_entry_effect(self, player):
-        # Fais disparaitre l'entiereté d'un type d'objet ( toute les clés ou toutes les pièces ou tout les gemmes ...)
-        pass 
-    """
+    
+    def apply_entry_effect(self, player, grid):
+        if self.First_time:
+            self.First_time = False
+            
+            val = r.randint(0,3)
+
+            if val == 0 :
+                if player.pieces > 0:
+                    player.pieces = 0
+                    return f"Un voleur surgit et dérobe toutes vos pièces !"
+                else:
+                    return f"Le voleur essaie de prendre vos pièces, mais vous n'en avez pas. Ouf !"
+
+            if val == 1 :
+                if player.gemmes > 0:
+                    player.gemmes = 0
+                    return f"Un voleur surgit et dérobe toutes vos gemmes !"
+                else:
+                    return f"Le voleur essaie de prendre vos gemmes, mais vous n'en avez pas. Ouf !"
+                
+            if val == 2 :
+                if player.cles > 0:
+                    player.cles = 0
+                    return f"Un voleur surgit et dérobe toutes vos clés !"
+                else:
+                    return f"Le voleur essaie de prendre vos clés, mais vous n'en avez pas. Ouf !"
+
+            if val == 3 :
+                if player.des > 0:
+                    player.des = 0
+                    return f"Un voleur surgit et dérobe toutes vos dés !"
+                else:
+                    return f"Le voleur essaie de prendre vos dés, mais vous n'en avez pas. Ouf !"
+               
+            
+        
+        return None
 
 
 class Billiard_Room(Room):

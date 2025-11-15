@@ -284,8 +284,10 @@ def set_door_statuses(room, grid, x, y, previous_x, previous_y):
         elif direction == 'east' and x < MANOR_WIDTH - 1 and grid[y][x+1] is not None:
             room.doors_statut['east'] = grid[y][x+1].doors_statut['west']
         else:
-            # C'est une nouvelle porte qui mène au vide. On détermine son verrouillage.
-            room.doors_statut[direction] = determine_lock_level(y)
+            if room.name == "Corridor":
+                room.doors_statut[direction] = 0 # La salle Corridor a c'est portes toujours déverouillé
+            else:
+                room.doors_statut[direction] = determine_lock_level(y)
             
     # La porte par laquelle on vient d'entrer est toujours déverrouillée (coût payé)
     entry_dir = get_entry_direction(previous_x, previous_y, x, y)

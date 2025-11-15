@@ -636,6 +636,45 @@ def lancer_jeu():
                             current_room = grille_manoir[player_y][player_x]
                             current_doors = current_room.get_rotated_doors()
                             
+                            if current_room.name == "Maze":
+
+                                # Trouver toutes les sorties déverrouillées
+                                possible_directions = []
+                                
+
+                                if current_doors['north'] and current_room.doors_statut.get('north', 0) == 0:
+                                    possible_directions.append('up')
+                                if current_doors['south'] and current_room.doors_statut.get('south', 0) == 0:
+                                    possible_directions.append('down')
+                                if current_doors['west'] and current_room.doors_statut.get('west', 0) == 0:
+                                    possible_directions.append('left')
+                                if current_doors['east'] and current_room.doors_statut.get('east', 0) == 0:
+                                    possible_directions.append('right')
+
+                                # Si des sorties déverrouillées existent
+                                if possible_directions:
+                                    # Choisir une de ces directions au hasard
+                                    chosen_random_direction = random.choice(possible_directions)
+
+                                    # Forcer la nouvelle direction et cible
+                                    selected_direction = chosen_random_direction
+                                    if selected_direction == 'up':
+                                        target_x = player_x
+                                        target_y = max(0, player_y - 1)
+                                    elif selected_direction == 'down':
+                                        target_x = player_x
+                                        target_y = min(MANOR_HEIGHT - 1, player_y + 1)
+                                    elif selected_direction == 'left':
+                                        target_x = max(0, player_x - 1)
+                                        target_y = player_y
+                                    elif selected_direction == 'right':
+                                        target_x = min(MANOR_WIDTH - 1, player_x + 1)
+                                        target_y = player_y
+
+                                    # Ajouter un message (s'il y a plus d'une option)
+                                    if len(possible_directions) > 1:
+                                        message_queue.append(("Le Labyrinthe vous désoriente !", MESSAGE_DURATION))
+
                             has_exit = False
                             direction_str = ""
                             if selected_direction == 'up' and current_doors['north']: 

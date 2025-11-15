@@ -13,7 +13,7 @@ class Inventaire:
         self.objets = {}
         
         # Objets permanents 
-        self.pelle = True
+        self.pelle = False
         self.patte_lapin = False
         self.kit_crochetage = True
         self.detecteur_métaux = True
