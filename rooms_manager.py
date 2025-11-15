@@ -10,7 +10,7 @@ MANOR_WIDTH = 5
 MANOR_HEIGHT = 9
 
 def get_entry_direction(from_x, from_y, to_x, to_y):
-    """Détermine de quelle direction le joueur ARRIVE."""
+    """Détermine de quelle direction le joueur arrive."""
     # from_y et from_x correspondent aux coordonnées de la salle où on est actuellement.
     # on compare ici de manière logique si la coordonnées de la où on est, 
     # est plus grande que celle où on va pour déterminer d'où l'on arrive

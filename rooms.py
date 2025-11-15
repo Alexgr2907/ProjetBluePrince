@@ -12,7 +12,7 @@ import inventaire
 # je l'utilise pour les classe pumpkin et Closet
 proba_objets = {
     # Ici les valeurs représente le poids d'un objet. Plus le poids est élevé plus l'objets a de chance d'être pioché
-    # Nourriture 
+    # Consommable
     objet.Pomme : 10, 
     objet.Banane : 9, 
     objet.Gateau : 7, 
@@ -39,21 +39,10 @@ class Room(ABC):
         self.color = color # "blue", "green", etc. 
         # Portes "modèles" (indique ou il y a une porte)
         self.door_location = {'north': False, 'south': False, 'east': False, 'west': False}
-        self.objects_in_room = [] # Objets qui seront dans la pièce
         self.dig_spot = False # Endroit à creuser
-        
-
-        # Statut des portes (-1 pas de porte, 0 pour ouverte, 1 une clé ou kit crochetage,2 que une clé)
-        # sera utilisé par Dimitri pour dire si les portes sont vérouillé où non (logique de clés)
-        # ex: {'north': 0, 'south': 1, 'east': -1 (pas de porte), 'west': 2}
-        self.doors_statut = {} 
-
-        
-        # logique d'effet de 1er entréed'entrée 
-        self.First_time = True
-
-        # 0 = 0° (Original), 1 = 90° anti-horaire, 2 = 180°, 3 = 270° anti-horaire
-        self.rotation = 0 
+        self.doors_statut = {} # Statut des portes
+        self.First_time = True  # logique d'effet de 1er entrée
+        self.rotation = 0 # rotation de la salle
         # Stockera les rotations valides (ex: [0, 2]) lors du tirage
         self.valid_rotations = []
 
@@ -80,11 +69,11 @@ class Room(ABC):
         """
         doors = self.door_location # Le 'plan' original
         
-        # Rotation 0: 0° 
+        # Rotation 0: 0 degrés 
         if self.rotation == 0:
             return doors
         
-        # Rotation 1: 90° anti-horaire
+        # Rotation 1: 90 degrés anti-horaire
         elif self.rotation == 1: 
             return {
                 'north': doors['east'], 
@@ -93,7 +82,7 @@ class Room(ABC):
                 'west': doors['north']
             }
         
-        # Rotation 2: 180°
+        # Rotation 2: 180 degrés anti-horaire
         elif self.rotation == 2: 
             return {
                 'north': doors['south'], 
@@ -102,7 +91,7 @@ class Room(ABC):
                 'west': doors['east']
             }
         
-        # Rotation 3: 270° anti-horaire
+        # Rotation 3: 270 degrés anti-horaire
         elif self.rotation == 3: 
             return {
                 'north': doors['west'], 
@@ -118,7 +107,7 @@ class Room(ABC):
         """
         Applique un effet spécial la première fois que le joueur entre.
         """
-        None
+        return None
 
     # Sert à appliquer un effet à chaque entrée dans la salle
     def apply_every_entry_effect(self, player, grid):
@@ -213,7 +202,6 @@ class Exit(Room):
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': True, 'west': True}
 
-
 class Joker_Office(Room):
     def __init__(self):
         super().__init__(name="Joker's Office", rarity=1, gem_cost=0, color="Red", image_path="NouvelleSalleThèmeHorreur/Joker_Office_Icon.webp")
@@ -239,8 +227,7 @@ class Joker_Office(Room):
                 self.First_time = False 
                 return " Pas de chance! Vous perdez 10 pas" 
             
-
-        return None # Ne fait rien les fois suivantes
+        return None 
 
 
 class Locksmith(Room):
@@ -252,7 +239,7 @@ class Locksmith(Room):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': False}
 
     def apply_entry_effect(self, player, grid):
-        # Renvoie le signal à la première entrée
+        
         if self.First_time:
             self.First_time = False
             return "open_shop_locksmith"
@@ -265,7 +252,6 @@ class Locksmith(Room):
             return "open_shop_locksmith"
         return None
 
-#
 class Maze(Room):
 
     def __init__(self):
@@ -283,8 +269,6 @@ class Bedroom(Room):
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': True}
 
-
-    
     def apply_every_entry_effect(self, player, grid):
         
         player.pas += 2
@@ -305,15 +289,15 @@ class Closet(Room):
             # Prépare les listes pour le tirage pondéré depuis le dict
             classes_possibles = list(proba_objets.keys())
             poids = list(proba_objets.values())
-            items_found_names = []
+            items = []
             
             # Boucle pour donner 2 objets
             for _ in range(2):
-                # Tire UNE classe d'objet en respectant les poids
+                # Tire une classe d'objet en respectant les poids
                 # r.choices renvoie une liste, on prend le premier élément [0]
                 choix_classe = r.choices(classes_possibles, weights=poids, k=1)[0]
                 
-                # Crée une instance de cet objet (ex: objet.Pomme())
+                # Crée une instance de cet objet
                 item_instance = choix_classe() 
 
                 # Gère l'ajout à l'inventaire en fonction du type
@@ -321,7 +305,7 @@ class Closet(Room):
                     # La méthode 'utiliser' des objets permanents les active
                     # (ex: player.pelle = True)
                     item_instance.utiliser(player)
-                    items_found_names.append(item_instance.nom)
+                    items.append(item_instance.nom)
                     
                 elif isinstance(item_instance, objet.Nourriture):
                     # La nourriture est ajoutée au dictionnaire 'objets'
@@ -330,13 +314,13 @@ class Closet(Room):
                         player.objets[nom] += 1
                     else:
                         player.objets[nom] = 1
-                    items_found_names.append(nom)
+                    items.append(nom)
 
             # Retourner le message de feedback
-            if items_found_names:
-                return f"Vous trouvez : {', '.join(items_found_names)} !"
+            if items:
+                return f"Vous trouvez : {', '.join(items)} !"
             else:
-                return "Le placard est vide..." # Si jamais le tirage échoue
+                return "Le placard est vide..." 
 
         return None 
 
@@ -434,8 +418,6 @@ class Thief_Storage(Room):
                 else:
                     return f"Le voleur essaie de prendre vos dés, mais vous n'en avez pas. Ouf !"
                
-            
-        
         return None
 
 
@@ -476,7 +458,6 @@ class Haunted_Gym(Room):
     def apply_every_entry_effect(self, player, grid):
         player.pas -= 2
         return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
-        return None
         
 
 
@@ -506,9 +487,6 @@ class Loot_Stash(Room):
             return f"En fouyant dans ce bordel, vous trouvez {nb_cles} clé(s), {nb_gemmes} gemme et {nb_pieces} pièce(s)."
         return None        
 
-
-
-
 class Master_Bedroom(Room):
     def __init__(self):
         super().__init__(name="Master Bedroom", rarity=2, gem_cost=1, color="purple", image_path="NouvelleSalleThèmeHorreur/Master_Bedroom_Icon.webp")
@@ -536,7 +514,6 @@ class Master_Bedroom(Room):
                 return f"Vous gagnez {salles_ouverte} pas (1 par salle découverte)!"
         return None 
 
-
 class Passageway(Room):
     def __init__(self):
         super().__init__(name="Passageway", rarity=1, gem_cost=1, color="orange", image_path="NouvelleSalleThèmeHorreur/Passageway_Icon.webp")
@@ -544,7 +521,6 @@ class Passageway(Room):
 
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': True, 'west': True}
-
 
 class Patio(Room):
     def __init__(self):
@@ -582,7 +558,7 @@ class Pawn_Shop(Room):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': True}
 
     def apply_entry_effect(self, player, grid):
-        # Renvoie le signal à la première entrée
+        
         if self.First_time:
             self.First_time = False
             return "open_shop_pawnshop"
@@ -590,8 +566,6 @@ class Pawn_Shop(Room):
     
     def apply_every_entry_effect(self, player, grid):
         if self.First_time == False:
-        # Cette fonction est appelée à chaque entrée.
-        # Elle retourne un signal à affichage.py pour ouvrir le menu.
             return "open_shop_pawnshop"
         return None
     
@@ -611,15 +585,15 @@ class Pumpkin_Field(Room):
             # Prépare les listes pour le tirage pondéré depuis le dict
             classes_possibles = list(proba_objets.keys())
             poids = list(proba_objets.values())
-            items_found_names = []
+            items = []
             
             # Boucle pour donner 2 objets
             for _ in range(2):
-                # Tire UNE classe d'objet en respectant les poids
+                # Tire une classe d'objet en respectant les poids
                 # r.choices renvoie une liste, on prend le premier élément [0]
                 choix_classe = r.choices(classes_possibles, weights=poids, k=1)[0]
                 
-                # Crée une instance de cet objet (ex: objet.Pomme())
+                # Crée une instance de cet objet
                 item_instance = choix_classe() 
 
                 # Gère l'ajout à l'inventaire en fonction du type
@@ -627,7 +601,7 @@ class Pumpkin_Field(Room):
                     # La méthode 'utiliser' des objets permanents les active
                     # (ex: player.pelle = True)
                     item_instance.utiliser(player)
-                    items_found_names.append(item_instance.nom)
+                    items.append(item_instance.nom)
                     
                 elif isinstance(item_instance, objet.Nourriture):
                     # La nourriture est ajoutée au dictionnaire 'objets'
@@ -636,13 +610,13 @@ class Pumpkin_Field(Room):
                         player.objets[nom] += 1
                     else:
                         player.objets[nom] = 1
-                    items_found_names.append(nom)
+                    items.append(nom)
 
             # Retourner le message de feedback
-            if items_found_names:
-                return f"Vous trouvez : {', '.join(items_found_names)} !"
+            if items:
+                return f"Vous trouvez : {', '.join(items)} !"
             else:
-                return "Le placard est vide..." # Si jamais le tirage échoue
+                return "Le placard est vide..." 
 
         return None 
 
