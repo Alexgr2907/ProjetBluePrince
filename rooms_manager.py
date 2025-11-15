@@ -1,6 +1,6 @@
 # Ce fichier servira à mettre tout les fonctions en lien avec la logique et la gestion des salles
 import random
-# Importe toutes les classes de ton fichier rooms.py
+# Importe toutes les classes du fichier rooms.py
 from rooms import *
 import inspect
 import objet
@@ -62,7 +62,6 @@ def find_valid_rotations(room, grid, target_x, target_y, from_x, from_y):
     valid_rotations = []
     entry_direction = get_entry_direction(from_x, from_y, target_x, target_y)
     
-    # Si on ne sait pas d'où on vient (cas de départ ?), on ne peut rien faire
     if entry_direction is None: 
         return []
 
@@ -70,15 +69,15 @@ def find_valid_rotations(room, grid, target_x, target_y, from_x, from_y):
         room.rotation = r
         rotated_doors = room.get_rotated_doors()
         
-        # 1. La porte d'entrée doit exister
+        # La porte d'entrée doit exister
         if not rotated_doors[entry_direction]:
             continue # Cette rotation est invalide, on passe à la suivante
             
-        # 2. Les portes ne doivent pas donner sur un mur extérieur
+        # Les portes ne doivent pas donner sur un mur extérieur
         if not check_walls(rotated_doors, target_x, target_y):
             continue
             
-        # 3. Les portes doivent correspondre aux voisins
+        # Les portes doivent correspondre aux voisins
         # (Cette fonction ignore la case d'où on vient, c'est géré au-dessus)
         if not check_neighbors(rotated_doors, grid, target_x, target_y):
             continue
@@ -102,26 +101,26 @@ def create_initial_deck():
         Gallery(),Gallery(),
         Dracula_tomb(),
         Garage(),Garage(),
-        Joker_Office(),
+        Joker_Office(),Joker_Office(),
         Locksmith(),
-        Maze(),
-        Bedroom(),
+        Maze(),Maze(),
+        Bedroom(),Bedroom(),
         Closet(),Closet(),
-        Courtyard(),
+        Courtyard(),Courtyard(),
         Corridor(),Corridor(),
         Pantry(),Pantry(),
-        Thief_Storage(),
-        Billiard_Room(),Billiard_Room(),
-        Chucky_Bedroom(),Chucky_Bedroom(),
+        Thief_Storage(),Thief_Storage(),
+        Billiard_Room(),Billiard_Room(),Billiard_Room(),
+        Chucky_Bedroom(),
         Statue_Hall(),Statue_Hall(),
-        Pumpkin_Field(),
+        Pumpkin_Field(),Pumpkin_Field(),
         Pawn_Shop(),
-        Patio(),
-        Passageway(),Passageway(),
+        Patio(),Patio(),
+        Passageway(),Passageway(),Passageway(),
         Master_Bedroom(),
-        Loot_Stash(),Loot_Stash(),
-        Haunted_Gym(),
-        Devil_Church()
+        Loot_Stash(),
+        Haunted_Gym(),Haunted_Gym(),
+        Devil_Church(),Devil_Church()
     ]
     return deck
 

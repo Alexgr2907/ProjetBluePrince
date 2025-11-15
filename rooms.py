@@ -11,7 +11,7 @@ import inventaire
 
 # je l'utilise pour les classe pumpkin et Closet
 proba_objets = {
-    # Ici 1 représente une rareté de 3 (légendaire) et 10 une rareté de 0 (commun), plus le poids est élevé plus l'objets a de chance d'être pioché
+    # Ici les valeurs représente le poids d'un objet. Plus le poids est élevé plus l'objets a de chance d'être pioché
     # Nourriture 
     objet.Pomme : 10, 
     objet.Banane : 9, 
@@ -41,21 +41,19 @@ class Room(ABC):
         self.door_location = {'north': False, 'south': False, 'east': False, 'west': False}
         self.objects_in_room = [] # Objets qui seront dans la pièce
         self.dig_spot = False # Endroit à creuser
-        self.First_time = True # Drapeau 1er entrée
-
+        
 
         # Statut des portes (-1 pas de porte, 0 pour ouverte, 1 une clé ou kit crochetage,2 que une clé)
         # sera utilisé par Dimitri pour dire si les portes sont vérouillé où non (logique de clés)
         # ex: {'north': 0, 'south': 1, 'east': -1 (pas de porte), 'west': 2}
         self.doors_statut = {} 
 
-        #  nous dit si le joueur est déjà entré DANS CETTE instance
-        # logique d'effet d'entrée 
+        
+        # logique d'effet de 1er entréed'entrée 
         self.First_time = True
 
         # 0 = 0° (Original), 1 = 90° anti-horaire, 2 = 180°, 3 = 270° anti-horaire
         self.rotation = 0 
-        
         # Stockera les rotations valides (ex: [0, 2]) lors du tirage
         self.valid_rotations = []
 
@@ -72,7 +70,7 @@ class Room(ABC):
 
     @abstractmethod
     def set_doors(self):
-        """Méthode abstraite pour définir les portes de la pièce modèle."""
+        """Méthode abstraite pour définir les portes de la pièce ."""
         pass
 
     def get_rotated_doors(self):
@@ -82,7 +80,7 @@ class Room(ABC):
         """
         doors = self.door_location # Le 'plan' original
         
-        # Rotation 0: 0° (Identique)
+        # Rotation 0: 0° 
         if self.rotation == 0:
             return doors
         
@@ -113,63 +111,31 @@ class Room(ABC):
                 'west': doors['south']
             }
         
-        return doors # Sécurité
+        return doors 
     
-    # Le player servira à verifier l'inventaire du joueur pour dans certain cas
-    # ajouter des effets en fonction de l'objet
-    # Sert à ajouter des objets dans la salle
-    """
-    def add_objects(self, player):
-        
-        Ajoute des objets aléatoires à la pièce lors de sa création.
-        C'est ici que tu gères "Aléatoire dans les objets disponibles dans les pièces".
-        
-        # Par défaut, une pièce ne contient rien 
-        self.objects_in_room = []
-        
-        # Exemple pour une pièce spécifique (à surcharger dans les sous-classes)
-        # if self.name == "Den":
-        #    self.objects_in_room.append(Gem(1)) 
-        #    # Gérer la probabilité de trouver un coffre 
-        #    # Tu devras vérifier si le joueur a la Patte de Lapin 
-        #    probability = 0.3 
-        #    if player.has_item("Lucky Rabbit's Foot"):
-        #        probability += 0.1 # Augmenter la chance
-        #    
-        #    if random.random() < probability:
-        #        self.objects_in_room.append(Chest())
-    """
     #Sert à appliquer un effet à la première entrée dans la salle
     def apply_entry_effect(self, player, grid):
         """
         Applique un effet spécial la première fois que le joueur entre.
-        Par défaut, la plupart des pièces n'ont pas d'effet.
         """
         None
 
     # Sert à appliquer un effet à chaque entrée dans la salle
     def apply_every_entry_effect(self, player, grid):
-        """Applique un effet *à chaque fois* que le joueur entre."""
+        """
+        Applique un effet à chaque fois que le joueur entre.
+        """
         if self.dig_spot:
             return "Vous remarquez un endroit dans la pièce qui semble parfait pour creuser (Touche C)!"
         return None
 
-    """
-    def generation_objet(self, taux_drop : float = 0.5):
-        
-        Tente de génerer un objet aléatoire
-        
-        pass # génération dans room_manager
-    """
+      
 class Midas_vault(Room):
     def __init__(self):
-        # Appelle le constructeur de la classe mère (Room)
         super().__init__(name="Vault", rarity=2, gem_cost=3, color="blue", image_path="NouvelleSalleThèmeHorreur/Midas_Vault_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
-        # La "Vault" n'a qu'une seule porte 
-        # On suppose que c'est la porte Sud (celle par laquelle on entre)
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': False}
 
     def apply_entry_effect(self, player, grid):
@@ -193,7 +159,7 @@ class Gallery(Room):
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': False, 'west': False}
 
-    
+
 class Dracula_tomb(Room):
     def __init__(self):
         super().__init__(name="Dracula's Tomb", rarity=1, gem_cost=0, color="blue", image_path="NouvelleSalleThèmeHorreur/Dracula_Tomb_Icon.webp")
@@ -279,7 +245,7 @@ class Joker_Office(Room):
 
 class Locksmith(Room):
     def __init__(self):
-        super().__init__(name="Locksmith", rarity=1, gem_cost=1, color="yellow", image_path="NouvelleSalleThèmeHorreur/Locksmith_Icon.webp")
+        super().__init__(name="Locksmith", rarity=2, gem_cost=1, color="yellow", image_path="NouvelleSalleThèmeHorreur/Locksmith_Icon.webp")
         self.set_doors()
 
     def set_doors(self):
@@ -299,7 +265,7 @@ class Locksmith(Room):
             return "open_shop_locksmith"
         return None
 
-# A faireeee
+#
 class Maze(Room):
 
     def __init__(self):
@@ -308,22 +274,6 @@ class Maze(Room):
 
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': True, 'west': True}
-    """
-    def add_objects(self, player):
-        pass
-
-    def exit():
-        val = r.randint(0,3)
-        if val == 0:
-            #next_room = south
-        elif val == 1:
-            #next_room = west
-        elif val == 2:
-            #next_room = north
-        elif val == 3:
-            #next_room = east
-        return next_room
-    """
     
 class Bedroom(Room):
     def __init__(self):
@@ -332,13 +282,8 @@ class Bedroom(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': False, 'west': True}
-    
-    def apply_entry_effect(self, player, grid):
-        if self.First_time:
-            player.pas += 2 
-            self.First_time = False
-            return "Vous vous reposez un instant. Vous gagnez 2 pas"
-        return None
+
+
     
     def apply_every_entry_effect(self, player, grid):
         
@@ -395,7 +340,7 @@ class Closet(Room):
 
         return None 
 
-# A FAIREEE  
+
 class Courtyard(Room):
     def __init__(self):
         super().__init__(name="Courtyard", rarity=1, gem_cost=1, color="green", image_path="NouvelleSalleThèmeHorreur/Courtyard_Icon.webp")
@@ -416,7 +361,7 @@ class Courtyard(Room):
 
         return None 
         
-# A FAIIRREEEE     
+    
 class Corridor(Room):
     def __init__(self):
         super().__init__(name="Corridor", rarity=1, gem_cost=0, color="orange", image_path="NouvelleSalleThèmeHorreur/Corridor_Icon.webp")
@@ -424,12 +369,7 @@ class Corridor(Room):
 
     def set_doors(self):
         self.door_location = {'north': True, 'south': True, 'east': False, 'west': False}
-    """
-    def apply_entry_effect(self, player):
-        # porte toujours ouverte
-        self.doors_statut = {'north': 0, 'south': 0, 'east': -1 , 'west': -1}
-        pass 
-    """
+    
 
 class Pantry(Room):
     def __init__(self):
@@ -515,14 +455,7 @@ class Devil_Church(Room):
 
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
-
-    def apply_entry_effect(self, player, grid):
-        if self.First_time:
-            if not player.pieces == 0:
-                player.pieces -= 1
-            self.First_time = False
-            return "Les adeptes du diables vous obligent à faire un don. Vous perdez 1 pièces"
-        return None
+    
     
     def apply_every_entry_effect(self, player, grid):
         if not player.pieces == 0 :
@@ -539,12 +472,6 @@ class Haunted_Gym(Room):
     def set_doors(self):
         self.door_location = {'north': False, 'south': True, 'east': True, 'west': True}
     
-    def apply_entry_effect(self, player, grid):
-        if self.First_time:
-            player.pas -= 2
-            self.First_time = False
-            return "Un basket avec des fantomes ? mauvaise idée. Vous perdez 2 pas"
-        return None
     
     def apply_every_entry_effect(self, player, grid):
         player.pas -= 2
