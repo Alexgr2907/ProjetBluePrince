@@ -1,7 +1,7 @@
 import objet
 
 class Inventaire:
-    def __init__(self, pas = 70 , pieces = 0 ,gemmes = 2 , cles = 0, des = 10):
+    def __init__(self, pas = 70 , pieces = 0 ,gemmes = 2 , cles = 0, des = 5):
         # Ressources de base
         self.pas = pas
         self.pieces = pieces

@@ -329,7 +329,7 @@ def pioche_butin_creuser(inventaire_joueur):
         Retourne None si rien n'est trouvé.
     """
 
-    taux_base = 0.10
+    taux_base = 0.05
 
     if inventaire_joueur and inventaire_joueur.patte_lapin :
         taux_base = (min(1.0, taux_base+0.3))
@@ -495,8 +495,3 @@ def condi_blocage(grille_manoir, MANOR_WIDTH, MANOR_HEIGHT):
 
     return True
     #Le jeu est  blqoué car il n'existe pas de salle qui peut s'étendre
-
-
-
-
-
