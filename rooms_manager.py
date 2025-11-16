@@ -93,7 +93,7 @@ def create_initial_deck():
     """
     Crée la liste d'instances de pièces pour la pioche.
     """
-    # Ne pas ajouter Horror_Hall, elle est déjà placée
+    # Ne pas ajouter Horror_Hall et Exit, elles sont déjà placées
     # si il y a 4 fois le nom d'une salle, 
     # cela signifie que l'on peut tirer quatre fois cette salle
     deck = [
@@ -101,7 +101,7 @@ def create_initial_deck():
         Gallery(),Gallery(),
         Dracula_tomb(),
         Garage(),Garage(),
-        Joker_Office(),Joker_Office(),
+        Joker_Office(),Joker_Office(),Joker_Office(),
         Locksmith(),
         Maze(),Maze(),
         Bedroom(),Bedroom(),
@@ -109,7 +109,7 @@ def create_initial_deck():
         Courtyard(),Courtyard(),
         Corridor(),Corridor(),
         Pantry(),Pantry(),
-        Thief_Storage(),Thief_Storage(),
+        Thief_Storage(),Thief_Storage(),Thief_Storage(),
         Billiard_Room(),Billiard_Room(),Billiard_Room(),
         Chucky_Bedroom(),
         Statue_Hall(),Statue_Hall(),
@@ -118,9 +118,9 @@ def create_initial_deck():
         Patio(),Patio(),
         Passageway(),Passageway(),Passageway(),
         Master_Bedroom(),
-        Loot_Stash(),
-        Haunted_Gym(),Haunted_Gym(),
-        Devil_Church(),Devil_Church()
+        Loot_Stash(),Loot_Stash(),
+        Haunted_Gym(),Haunted_Gym(),Haunted_Gym(),
+        Devil_Church(),Devil_Church(),Devil_Church()
     ]
     return deck
 
@@ -149,7 +149,6 @@ def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y
         return []
     
     # Calcule les poids en fonction de la rareté
-    # Rareté 0: Poids 3^3=27 ; Rareté 1: Poids 3^2=9 ; ...
     weights = []
     for room in placeable_deck:
         # Poids = 3^(3 - rareté)
@@ -173,8 +172,7 @@ def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y
     return drawn_rooms
 
 
-#-------------------- Pioche aléatoire des consommables
-
+# Pioche aléatoire des consommables
 def pioche_aleatoire_objet(inventaire_joueur, taux_drop: float = 0.5):
     """
     Détermine si un objet doit être pioché et lequel
@@ -197,7 +195,7 @@ def pioche_aleatoire_objet(inventaire_joueur, taux_drop: float = 0.5):
     
     return pioche_classe() # Pour tous les autres objets
 
-#-------------------- Pioche aléatoire de l'endroit à creuser
+# Pioche aléatoire de l'endroit à creuser
 
 def pioche_butin_creuser(inventaire_joueur):
     """
@@ -235,28 +233,24 @@ def determine_lock_level(row_index):
     """
     Détermine le niveau de verrouillage (0, 1, ou 2) en fonction de la rangée.
     """
-    # row_index 0 est le HAUT (fin), row_index 8 est le BAS (début)
-    
-    # Première rangée (où on commence, y=8) : toujours niveau 0
-    if row_index == MANOR_HEIGHT - 1: # 8
+    # row_index 0 est le haut(fin) et row_index 8 est le bas(début)
+    # Première rangée (où on commence, y=8) est toujours niveau 0
+    if row_index == MANOR_HEIGHT - 1:
         return 0
     
-    # Dernière rangée (Antichambre, y=0) : toujours niveau 2
+    # Dernière rangée (Exit, y=0) est toujours niveau 2
     if row_index == 0:
         return 2
     
-    # --- Rangs intermédiaires ---
-    # Convertit la rangée (7 -> 1) en "progrès" (0.125 -> 0.875)
-    # Plus on est haut (proche de 0), plus 'progress' est proche de 1.0
-    progress = 1.0 - (row_index / (MANOR_HEIGHT - 1))
+    # Plus on est haut (proche de 0), plus 'progression' est proche de 1.0
+    progression = 1.0 - (row_index / (MANOR_HEIGHT - 1))
     
     rand_val = random.random()
     
-    # Plus on progresse, plus la proba de Niv 2 est haute (max 30%)
-    if rand_val < (progress * 0.2):
+    # Plus on progresse dans le manoir, plus la proba de Niv 2 est haute (max 20%)
+    if rand_val < (progression * 0.2):
         return 2
-    # Plus on progresse, plus la proba de Niv 1 est haute (max 50%)
-    elif rand_val < (progress * 0.4):
+    elif rand_val < (progression * 0.5):
         return 1
     else:
         return 0

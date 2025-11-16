@@ -5,9 +5,6 @@ import objet
 import inventaire
 
 # dans ce fichier python ai défini toute les classes des pièces dans le jeu
-# les nom des classes, variables etc.. seront en anglais (pour une compréhension globale sur github)
-# les docstrings en revanche seront en français pour faciliter la compréhension des codes 
-
 
 # je l'utilise pour les classe pumpkin et Closet
 proba_objets = {
@@ -64,7 +61,7 @@ class Room(ABC):
 
     def get_rotated_doors(self):
         """
-        Retourne le dictionnaire des portes (le "plan") en tenant 
+        Fonction qui etourne le dictionnaire des portes en tenant 
         compte de la rotation actuelle de la pièce.
         """
         doors = self.door_location # Le 'plan' original
@@ -102,14 +99,14 @@ class Room(ABC):
         
         return doors 
     
-    #Sert à appliquer un effet à la première entrée dans la salle
+    
     def apply_entry_effect(self, player, grid):
         """
         Applique un effet spécial la première fois que le joueur entre.
         """
         return None
 
-    # Sert à appliquer un effet à chaque entrée dans la salle
+    
     def apply_every_entry_effect(self, player, grid):
         """
         Applique un effet à chaque fois que le joueur entre.

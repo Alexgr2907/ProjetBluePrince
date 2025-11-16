@@ -15,8 +15,8 @@ class Inventaire:
         # Objets permanents 
         self.pelle = False
         self.patte_lapin = False
-        self.kit_crochetage = True
-        self.detecteur_métaux = True
+        self.kit_crochetage = False
+        self.detecteur_métaux = False
         
 
     def depenser_piece(self, montant : int) -> bool:

@@ -1031,12 +1031,12 @@ def lancer_jeu():
                         else:
                             message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
 
-                    elif choix == 3: # Acheter Pelle
-                        if inventaire_joueur.pelle:
-                            message_queue.append(("Vous avez déjà la Pelle !", MESSAGE_DURATION))
+                    elif choix == 3: # Acheter DetecteurMetaux
+                        if inventaire_joueur.DetecteurMetaux:
+                            message_queue.append(("Vous avez déjà le détecteur de méteaux!", MESSAGE_DURATION))
                         elif inventaire_joueur.depenser_piece(15):
-                            inventaire_joueur.ramasser_objet(objet.Pelle())
-                            message_queue.append(("Achat réussi ! (Pelle)", MESSAGE_DURATION))
+                            inventaire_joueur.ramasser_objet(objet.DetecteurMetaux())
+                            message_queue.append(("Achat réussi ! (DetecteurMetaux)", MESSAGE_DURATION))
                         else:
                             message_queue.append(("Pas assez de pièces !", MESSAGE_DURATION))
                 
@@ -1397,9 +1397,9 @@ def lancer_jeu():
                 (f"(S) Acheter Araignée (Coût: 5 Pièces)", inventaire_joueur.pieces >= 5),
             ]
             if not inventaire_joueur.pelle:
-                options_pawnshop.append( (f"(D) Acheter Pelle (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15) )
+                options_pawnshop.append( (f"(D) Acheter Détecteur de méteaux (Coût: 15 Pièces)", inventaire_joueur.pieces >= 15) )
             else:
-                options_pawnshop.append( ("(Pelle déjà possédé)", False) )
+                options_pawnshop.append( ("(Détecteur de méteaux déjà possédé)", False) )
 
             dessiner_interface_magasin(screen, "Prêteur sur Gages", inventaire_joueur.pieces, options_pawnshop)
 
