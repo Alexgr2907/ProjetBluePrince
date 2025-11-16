@@ -10,7 +10,24 @@ MANOR_WIDTH = 5
 MANOR_HEIGHT = 9
 
 def get_entry_direction(from_x, from_y, to_x, to_y):
-    """Détermine de quelle direction le joueur arrive."""
+    """Détermine de quelle direction le joueur arrive.
+
+    Parameters
+    ----------
+    from_x : int
+        coordonnée en x de la où vient le joueur
+    from_y : int
+        coordonnée en y de la où vient le joueur
+    to_x : int
+        coordonnée en x de la où va le joueur
+    to_y : int
+        coordonnée en x de la où va le joueur
+
+    Returns
+    -------
+    str 
+        retourne la direction d'où viens le joueur
+    """
     # from_y et from_x correspondent aux coordonnées de la salle où on est actuellement.
     # on compare ici de manière logique si la coordonnées de la où on est, 
     # est plus grande que celle où on va pour déterminer d'où l'on arrive
@@ -22,7 +39,23 @@ def get_entry_direction(from_x, from_y, to_x, to_y):
     return None
 
 def check_walls(rotated_doors, x, y):
-    """Vérifie que les portes ne mènent pas hors de la grille."""
+    """ Vérifie que les portes ne mènent pas hors de la grille.
+
+    Parameters
+    ----------
+    rotated_doors : dict[str, bool]
+        dictionnaire contenant les directions correspondant aux portes de la salle
+    x : int
+        coordonnée en x sur la grille (sur les bords )
+    y : int
+        coordonnée en y sur la grille (sur les bords )
+
+    Returns
+    -------
+    bool
+        renvoi False si les portes mènent hors de la grille,
+        True sinon.
+    """
     if rotated_doors['north'] and y == 0: return False
     if rotated_doors['south'] and y == MANOR_HEIGHT - 1: return False
     if rotated_doors['west'] and x == 0: return False
@@ -30,7 +63,26 @@ def check_walls(rotated_doors, x, y):
     return True
 
 def check_neighbors(rotated_doors, grid, x, y):
-    """Vérifie la compatibilité avec les pièces voisines DÉJÀ en place."""
+    """Vérifie la compatibilité avec les pièces voisines DÉJÀ en place.
+
+    Parameters
+    ----------
+    rotated_doors : dict[str, bool]
+        dictionnaire contenant les directions correspondant aux portes de la salle
+    grid : list[list[object | None]]
+        La grille 2D représentant le manoir. Les cases contiennent
+        un objet "pièce" si elle est occupée, ou None si elle est vide.
+    x : int
+        coordonnée en x sur la grille (sur les bords )
+    y : int
+        coordonnée en x sur la grille (sur les bords )
+
+    Returns
+    -------
+    bool
+        True si la configuration des portes est compatible avec tous 
+        les voisins existants, False sinon.
+    """
     # Voisin du NORD (s'il existe)
     if y > 0 and grid[y-1][x] is not None:
         neighbor_doors = grid[y-1][x].get_rotated_doors()
@@ -56,8 +108,30 @@ def check_neighbors(rotated_doors, grid, x, y):
 
 
 def find_valid_rotations(room, grid, target_x, target_y, from_x, from_y):
-    """
-    Teste les 4 rotations pour une pièce et retourne la liste des rotations valides.
+    """Teste les 4 rotations pour une pièce et retourne la liste des rotations valides.
+
+    Parameters
+    ----------
+    room : Room
+        La pièce que l'on essaie de placer.
+    grid : list[list[object | None]]
+        La grille 2D représentant le manoir. Les cases contiennent
+        un objet "pièce" si elle est occupée, ou None si elle est vide.
+    target_x : int
+        coordonnée en x de la ou l'on veut mettre la pièce
+    target_y : int
+        coordonnée en y de la ou l'on veut mettre la pièce
+    from_x : int
+        coordonnée en x de la où vient le joueur
+    from_y : int
+        coordonnée en y de la où vient le joueur
+
+    Returns
+    -------
+    list[int]
+        Une liste d'entiers contenant les indices
+        de rotation (0, 1, 2, ou 3) qui sont valides pour cet
+        emplacement. Retourne une liste vide si aucune rotation n'est valide.
     """
     valid_rotations = []
     entry_direction = get_entry_direction(from_x, from_y, target_x, target_y)
@@ -90,8 +164,13 @@ def find_valid_rotations(room, grid, target_x, target_y, from_x, from_y):
 
 
 def create_initial_deck():
-    """
-    Crée la liste d'instances de pièces pour la pioche.
+    """Crée la liste d'instances de pièces pour la pioche.
+
+    Returns
+    -------
+    list[Room]
+        Une liste contenant toutes les instances de pièces (objets Room)
+        qui constituent la pioche de départ.
     """
     # Ne pas ajouter Horror_Hall et Exit, elles sont déjà placées
     # si il y a 4 fois le nom d'une salle, 
@@ -126,9 +205,34 @@ def create_initial_deck():
 
 
 def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y, reroll=False):
-    """
-    Pioche 3 pièces en respectant la rareté et la contrainte de gemmes.
-    reroll = True indique que l'appel proveint d'un retirage avec un dé
+    """Pioche 3 pièces en respectant la rareté et la contrainte de gemmes.
+
+    Parameters
+    ----------
+    deck : list[Room]
+        La pioche complète des pièces encore disponibles.
+    player_gems : int
+        Le nombre de gemmes que le joueur possède
+    grid : list[list[object | None]]
+        La grille 2D représentant le manoir. Les cases contiennent
+        un objet "pièce" si elle est occupée, ou None si elle est vide.
+    target_x : int
+        coordonnée en x de la ou l'on veut mettre la pièce
+    target_y : int
+        coordonnée en y de la ou l'on veut mettre la pièce
+    from_x : int
+        coordonnée en x de la où vient le joueur
+    from_y : int
+        coordonnée en y de la où vient le joueur
+    reroll : bool, (optionnel)
+        Indique s'il s'agit d'une relance
+
+    Returns
+    -------
+    list[Room]
+        Une liste contenant jusqu'à 3 objets Room, prêts à être
+        présentés au joueur.
+        Retourne une liste vide si aucune pièce n'est plaçable.
     """
     if not deck:
         return [] # Pioche vide
@@ -174,8 +278,21 @@ def draw_three_rooms(deck, player_gems, grid, target_x, target_y, from_x, from_y
 
 # Pioche aléatoire des consommables
 def pioche_aleatoire_objet(inventaire_joueur, taux_drop: float = 0.5):
-    """
-    Détermine si un objet doit être pioché et lequel
+    """Détermine si un objet doit être pioché et lequel
+
+    Parameters
+    ----------
+    inventaire_joueur : objet
+        Objet dans l'inventaire du joueur
+    taux_drop : float,
+        La probabilité de base (entre 0.0 et 1.0) qu'un objet 
+        soit pioché.
+
+    Returns
+    -------
+    object | None
+        Retourne une nouvelle instance de la classe d'objet piochée si le tirage est réussi.
+        Retourne None si aucun objet n'est pioché.
     """
 
     if inventaire_joueur and inventaire_joueur.patte_lapin :
@@ -198,8 +315,18 @@ def pioche_aleatoire_objet(inventaire_joueur, taux_drop: float = 0.5):
 # Pioche aléatoire de l'endroit à creuser
 
 def pioche_butin_creuser(inventaire_joueur):
-    """
-    Détermine le butin apres avoir creusé : 50% rien, 50% des objets consommbales
+    """Détermine le butin apres avoir creusé.
+
+    Parameters
+    ----------
+    inventaire_joueur : objet
+        Objet dans l'inventaire du joueur
+
+    Returns
+    -------
+    object | None
+        Retourne une nouvelle instance de la classe d'un objet consommable si le tirage est réussi.
+        Retourne None si rien n'est trouvé.
     """
 
     taux_base = 0.10
@@ -230,8 +357,18 @@ def pioche_butin_creuser(inventaire_joueur):
     
 
 def determine_lock_level(row_index):
-    """
-    Détermine le niveau de verrouillage (0, 1, ou 2) en fonction de la rangée.
+    """Détermine le niveau de verrouillage (0, 1, ou 2) en fonction de la rangée.
+
+    Parameters
+    ----------
+    row_index : int
+        L'indice Y (ligne) de la case pour laquelle on détermine
+        le niveau de serrure.
+
+    Returns
+    -------
+    int
+        Le niveau de verrouillage (0, 1, ou 2) en fonction de la rangée.
     """
     # row_index 0 est le haut(fin) et row_index 8 est le bas(début)
     # Première rangée (où on commence, y=8) est toujours niveau 0
@@ -256,9 +393,31 @@ def determine_lock_level(row_index):
         return 0
 
 def set_door_statuses(room, grid, x, y, previous_x, previous_y):
-    """
-    Initialise le dictionnaire 'doors_statut' pour une nouvelle pièce
+    """Initialise le dictionnaire 'doors_statut' pour une nouvelle pièce
     en se basant sur ses portes tournées, ses voisins et la rangée.
+
+    Parameters
+    ----------
+    room : Room
+        L'objet Room qui vient d'être placé et dont 
+        l'attribut `doors_statut` doit être initialisé.
+    grid : list[list[object | None]]
+        La grille 2D représentant le manoir. Les cases contiennent
+        un objet "pièce" si elle est occupée, ou None si elle est vide.
+    x : int
+        Coordonnée X (colonne) de la pièce qui vient d'être placée.
+    y : int
+        Coordonnée Y (colonne) de la pièce qui vient d'être placée.
+    previous_x : int
+        Coordonnée X (colonne) de la pièce d'où le joueur provient.
+    previous_y : int
+        Coordonnée X (colonne) de la pièce d'où le joueur provient.
+
+    Returns
+    -------
+    None
+        Cette fonction modifie l'attribut `room.doors_statut` en place
+        et ne retourne rien.
     """
     rotated_doors = room.get_rotated_doors()
     
@@ -289,8 +448,25 @@ def set_door_statuses(room, grid, x, y, previous_x, previous_y):
 
     
 def condi_blocage(grille_manoir, MANOR_WIDTH, MANOR_HEIGHT):
-    """
-    Vérifie si on est bloqué ou pas
+    """Vérifie si on est bloqué ou pas
+
+    Parameters
+    ----------
+    grille_manoir : list[list[object | None]]
+        La grille 2D représentant le manoir. Les cases contiennent
+        un objet "pièce" si elle est occupée, ou None si elle est vide.
+
+    MANOR_WIDTH :int
+        La largeur (nombre de colonnes) de la grille.
+    MANOR_HEIGHT :int
+        La hauteur (nombre de lignes) de la grille.
+
+    Returns
+    -------
+    bool
+        True si le jeu est bloqué.
+        False s'il existe au moins une porte pointant vers une
+        case vide.
     """
 
     for y in range(MANOR_HEIGHT-1):

@@ -24,7 +24,7 @@ proba_objets = {
     objet.Pelle :1
 }
 
-
+# CLASSE MERE ABSTRAITE: ROOM
 class Room(ABC):
     """
     Classe de base abstraite pour toutes les pièces du manoir.
@@ -115,7 +115,7 @@ class Room(ABC):
             return "Vous remarquez un endroit dans la pièce qui semble parfait pour creuser (Touche C)!"
         return None
 
-      
+# TOUTE LES CLASSES ENSUITE SONT DES CLASSES FILLES DE LA CLASSE ROOM 
 class Midas_vault(Room):
     def __init__(self):
         super().__init__(name="Vault", rarity=2, gem_cost=3, color="blue", image_path="NouvelleSalleThèmeHorreur/Midas_Vault_Icon.webp")
