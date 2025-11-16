@@ -481,7 +481,7 @@ class Loot_Stash(Room):
             player.cles += nb_cles
             player.gemmes += nb_gemmes
             self.First_time = False
-            return f"En fouyant dans ce bordel, vous trouvez {nb_cles} clé(s), {nb_gemmes} gemme et {nb_pieces} pièce(s)."
+            return f"En fouillant dans ce bordel, vous trouvez {nb_cles} clé(s), {nb_gemmes} gemme et {nb_pieces} pièce(s)."
         return None        
 
 class Master_Bedroom(Room):
