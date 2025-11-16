@@ -1,4 +1,4 @@
-import affichage  # Importer votre fichier qui contient la logique du jeu
+import affichage  
 import pygame
 
 def main():
